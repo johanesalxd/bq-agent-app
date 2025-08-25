@@ -68,14 +68,14 @@ OAUTH_CLIENT_ID=your_client_id
 OAUTH_CLIENT_SECRET=your_client_secret
 ```
 
-Update `agent.py`:
+Update `credentials.py`:
 ```python
 CREDENTIALS_TYPE = AuthCredentialTypes.OAUTH2
 ```
 
 ### 3. Service Account
 1. Download your service account key as `service_account_key.json`
-2. Update `agent.py`:
+2. Update `credentials.py`:
 ```python
 CREDENTIALS_TYPE = AuthCredentialTypes.SERVICE_ACCOUNT
 ```
@@ -89,7 +89,7 @@ The agent supports different write access levels:
 - **BLOCKED**: Read-only mode (default safety setting)
 - **PROTECTED**: Temporary data writes only
 
-To change the write mode, modify the `tool_config` in `agent.py`:
+To change the write mode, modify the `tool_config` in `credentials.py`:
 ```python
 tool_config = BigQueryToolConfig(write_mode=WriteMode.BLOCKED)  # For read-only
 ```
@@ -98,7 +98,7 @@ tool_config = BigQueryToolConfig(write_mode=WriteMode.BLOCKED)  # For read-only
 
 ### Running the Agent
 
-1. Configure your authentication method in `agent.py`
+1. Configure your authentication method in `credentials.py`
 2. Run the agent:
 ```bash
 adk web # or adk run
@@ -132,7 +132,8 @@ The agent has access to the following BigQuery operations:
 ```
 bq-agent-app/
 ├── __init__.py
-├── agent.py          # Main agent configuration
+├── agent.py          # Main agent definition and BigQuery toolset setup
+├── credentials.py    # BigQuery credentials configuration
 ├── .env              # Environment variables (create this)
 └── README.md         # This file
 ```
