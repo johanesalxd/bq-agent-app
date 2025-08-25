@@ -1,10 +1,15 @@
 # BigQuery Agent with Google ADK
 
-A powerful AI-powered data analysis agent that combines Google BigQuery with the Google Agent Development Kit (ADK) to enable natural language interactions with your data warehouse.
+A powerful AI-powered data analysis agent that combines Google BigQuery with the Google Agent Development Kit (ADK) to enable natural language interactions with your data warehouse. Now available in two implementations: direct BigQuery integration and Model Context Protocol (MCP) support.
 
 ## Overview
 
-This project demonstrates the integration of BigQuery with Google's Agent Development Kit, creating an intelligent agent that can understand natural language queries and execute SQL operations on BigQuery datasets. The agent leverages Google's Gemini models to provide conversational data analysis capabilities.
+This project demonstrates the integration of BigQuery with Google's Agent Development Kit, creating intelligent agents that can understand natural language queries and execute SQL operations on BigQuery datasets. The project includes two agent implementations:
+
+1. **Direct BigQuery Agent** (`bq-agent-app/`): Direct integration with BigQuery APIs
+2. **MCP BigQuery Agent** (`bq-agent-app-mcp/`): Uses Model Context Protocol for enhanced tool interoperability
+
+Both agents leverage Google's Gemini models to provide conversational data analysis capabilities.
 
 ## Features
 
@@ -14,18 +19,29 @@ This project demonstrates the integration of BigQuery with Google's Agent Develo
 - 🔎 **SQL Execution**: Execute complex SQL queries through natural language
 - 🤖 **AI-Powered**: Uses Gemini 2.5 Flash for intelligent query understanding
 - 🔐 **Flexible Authentication**: Multiple authentication methods supported
+- 🔗 **MCP Integration**: Model Context Protocol support for enhanced tool interoperability
+- 🛠️ **Dual Implementation**: Choose between direct BigQuery integration or MCP-based approach
 
 ### Coming Soon
-- 🔗 **MCP Integration**: Model Context Protocol support for enhanced tool interoperability
 - 📈 **Advanced Analytics**: Extended data visualization and analysis capabilities
 
 ## Architecture
 
-The agent is built using:
+The project provides two agent implementations:
+
+### Direct BigQuery Agent (`bq-agent-app/`)
 - **Google Agent Development Kit (ADK)**: Framework for building AI agents
 - **BigQuery Toolset**: Specialized tools for BigQuery operations
 - **Gemini 2.5 Flash**: Large language model for natural language understanding
 - **Python**: Core implementation language
+- **Vertex AI**: Google Cloud's AI platform integration
+
+### MCP BigQuery Agent (`bq-agent-app-mcp/`)
+- **Google Agent Development Kit (ADK)**: Framework for building AI agents
+- **MCP Toolbox**: Model Context Protocol for tool interoperability
+- **Gemini 2.5 Flash**: Large language model for natural language understanding
+- **Python**: Core implementation language
+- **Vertex AI**: Google Cloud's AI platform integration
 
 ## Prerequisites
 
@@ -34,6 +50,8 @@ The agent is built using:
 - Google Cloud credentials (one of the authentication methods below)
 
 ## Installation
+
+### Common Setup
 
 1. Clone the repository:
 ```bash
@@ -47,9 +65,25 @@ python -m venv .venv
 source .venv/bin/activate
 ```
 
+### For Direct BigQuery Agent (`bq-agent-app/`)
+
 3. Install dependencies:
 ```bash
 pip install google-adk
+```
+
+### For MCP BigQuery Agent (`bq-agent-app-mcp/`)
+
+3. Install dependencies:
+```bash
+pip install google-adk toolbox-core
+```
+
+4. Install MCP Toolbox:
+```bash
+cd bq-agent-app-mcp/mcp-toolbox
+chmod +x install-mcp-toolbox.sh
+./install-mcp-toolbox.sh
 ```
 
 ## Authentication Setup
@@ -96,10 +130,22 @@ tool_config = BigQueryToolConfig(write_mode=WriteMode.BLOCKED)  # For read-only
 
 ## Usage
 
-### Running the Agent
+### Running the Direct BigQuery Agent
 
 1. Configure your authentication method in `credentials.py`
 2. Run the agent:
+```bash
+adk web # or adk run
+```
+
+### Running the MCP BigQuery Agent
+
+1. Start the MCP Toolbox server:
+```bash
+./bq-agent-app-mcp/mcp-toolbox/toolbox --prebuilt bigquery
+```
+
+1. Run the agent:
 ```bash
 adk web # or adk run
 ```
@@ -131,12 +177,33 @@ The agent has access to the following BigQuery operations:
 
 ```
 bq-agent-app/
-├── __init__.py
-├── agent.py          # Main agent definition and BigQuery toolset setup
-├── credentials.py    # BigQuery credentials configuration
-├── .env              # Environment variables (create this)
-└── README.md         # This file
+├── bq-agent-app/                    # Direct BigQuery Agent
+│   ├── __init__.py
+│   ├── agent.py                     # Main agent definition and BigQuery toolset setup
+│   ├── credentials.py               # BigQuery credentials configuration
+│   └── .env                         # Environment variables (create this)
+├── bq-agent-app-mcp/                # MCP BigQuery Agent
+│   ├── __init__.py
+│   ├── agent.py                     # MCP-based agent definition
+│   ├── .env                         # Vertex AI configuration
+│   └── mcp-toolbox/                 # MCP Toolbox installation
+│       └── install-mcp-toolbox.sh   # Installation script
+├── .gitignore
+└── README.md                        # This file
 ```
+
+## Choosing Between Implementations
+
+### Use Direct BigQuery Agent when:
+- You need direct control over BigQuery API calls
+- You want to customize authentication methods extensively
+- You prefer a simpler setup without additional server components
+
+### Use MCP BigQuery Agent when:
+- You want enhanced tool interoperability through MCP
+- You're building a system that integrates with other MCP-compatible tools
+- You prefer the standardized MCP protocol for tool communication
+- You want to leverage Vertex AI's enhanced capabilities
 
 ## Security Considerations
 
