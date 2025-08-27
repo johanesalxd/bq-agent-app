@@ -51,7 +51,35 @@ The project provides two agent implementations:
 
 ## Installation
 
-### Common Setup
+### Quick Setup (Recommended)
+
+1. Clone the repository:
+```bash
+git clone https://github.com/johanesalxd/bq-agent-app.git
+cd bq-agent-app
+```
+
+2. Run the setup script:
+```bash
+./setup.sh
+```
+
+3. Activate the virtual environment:
+```bash
+source .venv/bin/activate
+```
+
+4. Configure authentication:
+```bash
+gcloud auth application-default login
+```
+
+### Manual Setup (Alternative)
+
+<details>
+<summary>Click to expand manual installation steps</summary>
+
+#### Common Setup
 
 1. Clone the repository:
 ```bash
@@ -65,14 +93,14 @@ python -m venv .venv
 source .venv/bin/activate
 ```
 
-### For Direct BigQuery Agent (`bq-agent-app/`)
+#### For Direct BigQuery Agent (`bq-agent-app/`)
 
 3. Install dependencies:
 ```bash
 pip install google-adk
 ```
 
-### For MCP BigQuery Agent (`bq-agent-app-mcp/`)
+#### For MCP BigQuery Agent (`bq-agent-app-mcp/`)
 
 3. Install dependencies:
 ```bash
@@ -86,7 +114,12 @@ chmod +x install-mcp-toolbox.sh
 ./install-mcp-toolbox.sh
 ```
 
+</details>
+
 ## Authentication Setup
+
+<details>
+<summary>Click to expand detailed authentication steps</summary>
 
 The agent supports three authentication methods:
 
@@ -113,6 +146,8 @@ CREDENTIALS_TYPE = AuthCredentialTypes.OAUTH2
 ```python
 CREDENTIALS_TYPE = AuthCredentialTypes.SERVICE_ACCOUNT
 ```
+
+</details>
 
 ## Configuration
 
