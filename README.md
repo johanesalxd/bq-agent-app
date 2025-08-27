@@ -6,8 +6,8 @@ A powerful AI-powered data analysis agent that combines Google BigQuery with the
 
 This project demonstrates the integration of BigQuery with Google's Agent Development Kit, creating intelligent agents that can understand natural language queries and execute SQL operations on BigQuery datasets. The project includes two agent implementations:
 
-1. **Direct BigQuery Agent** (`bq-agent-app/`): Direct integration with BigQuery APIs
-2. **MCP BigQuery Agent** (`bq-agent-app-mcp/`): Uses Model Context Protocol for enhanced tool interoperability
+1. **Direct BigQuery Agent** (`bq_agent_app/`): Direct integration with BigQuery APIs
+2. **MCP BigQuery Agent** (`bq_agent_app_mcp/`): Uses Model Context Protocol for enhanced tool interoperability
 
 Both agents leverage Google's Gemini models to provide conversational data analysis capabilities.
 
@@ -29,14 +29,14 @@ Both agents leverage Google's Gemini models to provide conversational data analy
 
 The project provides two agent implementations:
 
-### Direct BigQuery Agent (`bq-agent-app/`)
+### Direct BigQuery Agent (`bq_agent_app/`)
 - **Google Agent Development Kit (ADK)**: Framework for building AI agents
 - **BigQuery Toolset**: Specialized tools for BigQuery operations
 - **Gemini 2.5 Flash**: Large language model for natural language understanding
 - **Python**: Core implementation language
 - **Vertex AI**: Google Cloud's AI platform integration
 
-### MCP BigQuery Agent (`bq-agent-app-mcp/`)
+### MCP BigQuery Agent (`bq_agent_app_mcp/`)
 - **Google Agent Development Kit (ADK)**: Framework for building AI agents
 - **MCP Toolbox**: Model Context Protocol for tool interoperability
 - **Gemini 2.5 Flash**: Large language model for natural language understanding
@@ -55,8 +55,8 @@ The project provides two agent implementations:
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/johanesalxd/bq-agent-app.git
-cd bq-agent-app
+git clone https://github.com/johanesalxd/bq_agent_app.git
+cd bq_agent_app
 ```
 
 2. Run the setup script:
@@ -83,8 +83,8 @@ gcloud auth application-default login
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/johanesalxd/bq-agent-app.git
-cd bq-agent-app
+git clone https://github.com/johanesalxd/bq_agent_app.git
+cd bq_agent_app
 ```
 
 2. Create a virtual environment:
@@ -93,14 +93,14 @@ python -m venv .venv
 source .venv/bin/activate
 ```
 
-#### For Direct BigQuery Agent (`bq-agent-app/`)
+#### For Direct BigQuery Agent (`bq_agent_app/`)
 
 3. Install dependencies:
 ```bash
 pip install google-adk
 ```
 
-#### For MCP BigQuery Agent (`bq-agent-app-mcp/`)
+#### For MCP BigQuery Agent (`bq_agent_app_mcp/`)
 
 3. Install dependencies:
 ```bash
@@ -109,7 +109,7 @@ pip install google-adk toolbox-core
 
 4. Install MCP Toolbox:
 ```bash
-cd bq-agent-app-mcp/mcp-toolbox
+cd bq_agent_app_mcp/mcp-toolbox
 chmod +x install-mcp-toolbox.sh
 ./install-mcp-toolbox.sh
 ```
@@ -177,7 +177,7 @@ adk web # or adk run
 
 1. Start the MCP Toolbox server:
 ```bash
-./bq-agent-app-mcp/mcp-toolbox/toolbox --prebuilt bigquery
+./bq_agent_app_mcp/mcp-toolbox/toolbox --prebuilt bigquery
 ```
 
 1. Run the agent:
@@ -211,13 +211,13 @@ The agent has access to the following BigQuery operations:
 ## Project Structure
 
 ```
-bq-agent-app/
-├── bq-agent-app/                    # Direct BigQuery Agent
+bq_agent_app/
+├── bq_agent_app/                    # Direct BigQuery Agent
 │   ├── __init__.py
 │   ├── agent.py                     # Main agent definition and BigQuery toolset setup
 │   ├── credentials.py               # BigQuery credentials configuration
 │   └── .env                         # Environment variables (create this)
-├── bq-agent-app-mcp/                # MCP BigQuery Agent
+├── bq_agent_app_mcp/                # MCP BigQuery Agent
 │   ├── __init__.py
 │   ├── agent.py                     # MCP-based agent definition
 │   ├── .env                         # Vertex AI configuration

@@ -29,7 +29,7 @@ pip install -r requirements.txt
 
 # Download MCP Toolbox for MCP agent
 echo "Setting up MCP Toolbox..."
-cd bq-agent-app-mcp/mcp-toolbox
+cd bq_agent_app_mcp/mcp-toolbox
 chmod +x install-mcp-toolbox.sh
 ./install-mcp-toolbox.sh
 cd ../..
@@ -43,4 +43,4 @@ echo "2. Configure authentication: gcloud auth application-default login"
 echo "3. Run the agent: adk web"
 echo ""
 echo "For MCP agent, start the toolbox server first:"
-echo "./bq-agent-app-mcp/mcp-toolbox/toolbox --prebuilt bigquery"
+echo "./bq_agent_app_mcp/mcp-toolbox/toolbox --prebuilt bigquery"
