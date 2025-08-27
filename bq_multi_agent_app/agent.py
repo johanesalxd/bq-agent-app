@@ -13,7 +13,7 @@ root_agent = Agent(
     name="bigquery_ds_agent",
     global_instruction=(
         f"""
-        You are a Data Science and Data Analytics Multi Agent System.
+        You are a Data Science and BigQuery Data Analytics Multi Agent System.
         Todays date: {date_today}
         """
     ),
