@@ -55,8 +55,8 @@ The project provides two agent implementations:
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/johanesalxd/bq_agent_app.git
-cd bq_agent_app
+git clone https://github.com/johanesalxd/bq-agent-app.git
+cd bq-agent-app
 ```
 
 2. Run the setup script:
@@ -83,8 +83,8 @@ gcloud auth application-default login
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/johanesalxd/bq_agent_app.git
-cd bq_agent_app
+git clone https://github.com/johanesalxd/bq-agent-app.git
+cd bq-agent-app
 ```
 
 2. Create a virtual environment:
