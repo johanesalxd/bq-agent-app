@@ -3,7 +3,7 @@ from datetime import date
 from google.adk.agents.llm_agent import Agent
 
 from .prompts import return_instructions_root
-from .subagents import ds_agent
+from .sub_agents.ds_agents.agent import ds_agent
 from .tools import bigquery_toolset
 
 date_today = date.today()

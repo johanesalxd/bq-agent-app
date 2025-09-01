@@ -15,16 +15,8 @@ python3 -m venv .venv
 echo "Activating virtual environment..."
 source .venv/bin/activate
 
-# Create requirements.txt
-echo "Creating requirements.txt..."
-cat > requirements.txt << EOF
-google-adk
-toolbox-core
-EOF
-
 # Install Python dependencies
 echo "Installing Python dependencies..."
-pip install --upgrade pip
 pip install -r requirements.txt
 
 # Download MCP Toolbox for MCP agent
@@ -33,6 +25,11 @@ cd bq_agent_app_mcp/mcp-toolbox
 chmod +x install-mcp-toolbox.sh
 ./install-mcp-toolbox.sh
 cd ../..
+
+# Copy .env example. Update the value accordingly
+echo "Setting up Multi Agent environment..."
+cd bq_multi_agent_app
+cp .env.example .env
 
 echo ""
 echo "Setup completed successfully!"
