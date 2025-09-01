@@ -1,10 +1,17 @@
+"""
+BigQuery Multi-Agent Application - Root Agent
+
+This is the main agent that orchestrates BigQuery data retrieval and data science analysis.
+It uses tools (not sub-agents) to prevent code execution errors.
+"""
+
 from datetime import date
 
 from google.adk.agents.llm_agent import Agent
 
 from .prompts import return_instructions_root
-from .sub_agents.ds_agents.agent import ds_agent
 from .tools import bigquery_toolset
+from .tools import call_data_science_agent
 
 date_today = date.today()
 
@@ -13,11 +20,23 @@ root_agent = Agent(
     name="bigquery_ds_agent",
     global_instruction=(
         f"""
-        You are a Data Science and BigQuery Data Analytics Multi Agent System.
-        Todays date: {date_today}
+        You are a Data Science and BigQuery Analytics Multi Agent System.
+        Today's date: {date_today}
+
+        Your capabilities:
+        1. Query BigQuery databases using bigquery_toolset
+        2. Perform data science analysis using call_data_science_agent
+        3. Create visualizations and statistical analysis
+
+        Workflow:
+        1. Use BigQuery tools to retrieve data based on user questions
+        2. Use call_data_science_agent to analyze the retrieved data
+        3. Provide insights, visualizations, and conclusions
         """
     ),
     instruction=return_instructions_root(),
-    sub_agents=[ds_agent],
-    tools=[bigquery_toolset],
+    tools=[
+        bigquery_toolset,           # BigQuery database operations
+        call_data_science_agent,    # Data science analysis with code execution
+    ],
 )
