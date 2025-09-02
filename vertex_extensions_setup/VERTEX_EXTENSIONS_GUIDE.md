@@ -66,52 +66,9 @@ CODE_INTERPRETER_EXTENSION_NAME=projects/605626490127/locations/us-central1/exte
 - `python cleanup_vertex_extensions.py --keep-id EXTENSION_ID` - Delete duplicates
 
 **What it does**:
-- Lists all Code Interpreter extensions
+- Lists all Code Interpreter extensions (max. 100)
 - Keeps the specified extension ID
 - Deletes all other Code Interpreter extensions
-
-## How It Works
-
-### DS Agent Configuration
-
-The DS agent automatically uses the extension specified in the environment variable:
-
-```python
-ds_agent = Agent(
-    model='gemini-2.5-flash',
-    name="ds_agent",
-    instruction=return_instructions_ds(),
-    code_executor=VertexAiCodeExecutor(
-        optimize_data_file=False,
-        stateful=False,
-    ),
-)
-```
-
-The Google ADK SDK automatically checks for the `CODE_INTERPRETER_EXTENSION_NAME` environment variable.
-
-### Tool vs Sub-Agent Pattern
-
-The DS agent is wrapped as a tool to prevent `MALFORMED_FUNCTION_CALL` errors:
-
-```python
-# In tools.py
-def call_data_science_agent(query: str) -> str:
-    """Call the data science agent for data analysis and visualization."""
-    try:
-        response = ds_agent.send_message(query)
-        return response.text
-    except Exception as e:
-        return f"Error calling data science agent: {str(e)}"
-
-# In agent.py
-root_agent = Agent(
-    model='gemini-2.5-flash',
-    name="bigquery_ds_agent",
-    instruction=return_instructions_root(),
-    tools=[bigquery_toolset, call_data_science_agent],  # As tool, not sub_agent
-)
-```
 
 ## Best Practices
 
@@ -119,24 +76,6 @@ root_agent = Agent(
 2. **Keep the most recent extension**: Usually the one with the latest creation date
 3. **Set up environment variables**: Prevents creation of new extensions
 4. **Regular cleanup**: Periodically clean up unused extensions
-
-## Troubleshooting
-
-### Permission Errors
-```bash
-gcloud auth login
-gcloud config set project YOUR_PROJECT_ID
-```
-
-### Extension Not Found
-1. Run `python setup_vertex_extensions.py` to create a new one
-2. Check if you're using the correct extension ID
-3. Verify the extension exists in your project
-
-### Import Errors
-```bash
-pip install google-adk
-```
 
 ## Summary
 
@@ -146,5 +85,3 @@ This solution provides:
 - ✅ Prevents duplicate extensions via environment variables
 - ✅ Safe dry-run options
 - ✅ Tool-based architecture for error prevention
-
-Your DS agent will consistently use the specified extension without creating new ones.

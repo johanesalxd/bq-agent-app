@@ -3,6 +3,3 @@ __pycache__/
 toolbox
 mise.toml
 .env
-
-# temp
-data_science/*
