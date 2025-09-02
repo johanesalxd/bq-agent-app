@@ -22,7 +22,7 @@ chmod +x install-mcp-toolbox.sh
 ./install-mcp-toolbox.sh
 cd ../..
 
-# Setup Multi Agent environment
+# Setup Multi Agent environment (follow the same for other agents)
 cd bq_multi_agent_app
 cp .env.example .env
 cd ..
@@ -86,6 +86,7 @@ For the Multi-Agent System that uses Vertex AI Code Interpreter, you'll need to 
 GOOGLE_GENAI_USE_VERTEXAI=1
 GOOGLE_CLOUD_PROJECT=your-project-id
 GOOGLE_CLOUD_LOCATION=us-central1
+...
 ```
 
 2. **Start MCP Server** (MCP Agent only):
