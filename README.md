@@ -1,6 +1,6 @@
 # BigQuery Agent with Google ADK
 
-A powerful AI-powered data analysis agent that combines Google BigQuery with the Google Agent Development Kit (ADK) to enable natural language interactions with your data warehouse. Choose from three implementations based on your needs.
+A powerful AI-powered data analysis agent that combines Google BigQuery with the Google Agent Development Kit (ADK) to enable natural language interactions with your data warehouse. Choose from two implementations based on your needs.
 
 ## Quick Start
 
@@ -16,14 +16,14 @@ source .venv/bin/activate
 # Install Python dependencies
 pip install -r requirements.txt
 
-# Setup MCP Toolbox (for MCP agent only)
-cd bq_agent_app_mcp/mcp-toolbox
+# Setup MCP Toolbox (for Multi-Agent System)
+cd bq_multi_agent_app/mcp-toolbox
 chmod +x install-mcp-toolbox.sh
 ./install-mcp-toolbox.sh
 cd ../..
 
-# Setup Multi Agent environment (follow the same for other agents)
-cd bq_multi_agent_app
+# Setup environment
+cd bq_multi_agent_app  # or bq_agent_adk
 cp .env.example .env
 cd ..
 ```
@@ -43,25 +43,24 @@ For the Multi-Agent System that uses Vertex AI Code Interpreter, you'll need to 
 
 ## Available Implementations
 
-| Feature | Direct Agent | MCP Agent | Multi-Agent System |
-|---------|-------------|-----------|-------------------|
-| **Directory** | `bq_agent_app/` | `bq_agent_app_mcp/` | `bq_multi_agent_app/` |
-| **Setup Complexity** | Simple | Moderate | Simple |
-| **BigQuery Operations** | ✅ | ✅ | ✅ |
-| **MCP Protocol Support** | ❌ | ✅ | ❌ |
-| **Python Data Science** | ❌ | ❌ | ✅ |
-| **Statistical Analysis** | ❌ | ❌ | ✅ |
-| **Data Visualization** | ❌ | ❌ | ✅ |
-| **Multi-Agent Orchestration** | ❌ | ❌ | ✅ |
-| **Additional Dependencies** | None | MCP Toolbox | None |
+| Feature | ADK Agent | Multi-Agent System |
+|---------|-----------|-------------------|
+| **Directory** | `bq_agent_adk/` | `bq_multi_agent_app/` |
+| **Setup Complexity** | Simple | Moderate |
+| **BigQuery Operations** | ✅ | ✅ |
+| **MCP Protocol Support** | ❌ | ✅ |
+| **Python Data Science** | ❌ | ✅ |
+| **Statistical Analysis** | ❌ | ✅ |
+| **Data Visualization** | ❌ | ✅ |
+| **Multi-Agent Orchestration** | ❌ | ✅ |
+| **Additional Dependencies** | None | MCP Toolbox |
 
 ### When to Use Which
 
-- **Direct Agent**: Basic BigQuery queries and exploration, simple setup
-- **MCP Agent**: Tool interoperability, integration with other MCP-compatible systems
+- **ADK Agent**: Basic BigQuery queries and exploration, simple setup
 - **Multi-Agent System**: Advanced analytics, data science workflows, comprehensive analysis with visualizations
 
-## Core Features (All Implementations)
+## Core Features (Both Implementations)
 
 - 🔍 **Dataset Discovery**: List and explore BigQuery datasets
 - 📊 **Table Analysis**: Get detailed schema and metadata information
@@ -75,6 +74,10 @@ For the Multi-Agent System that uses Vertex AI Code Interpreter, you'll need to 
 - 🐍 **Python Analytics**: Stateful code execution for advanced data science workflows
 - 📈 **Data Visualization**: Automated chart generation with matplotlib
 - 🧠 **Statistical Analysis**: Comprehensive statistical testing and modeling
+- 🔗 **MCP Integration**: Uses Model Context Protocol for BigQuery operations
+- 💬 **Conversational Analytics**: Interactive BigQuery exploration via MCP
+- 📊 **Time Series Forecasting**: Built-in forecasting capabilities for temporal data
+- 📝 **Pre-defined SQL Templates**: Execute common SQL patterns efficiently
 
 ## Usage
 
@@ -89,9 +92,9 @@ GOOGLE_CLOUD_LOCATION=us-central1
 ...
 ```
 
-2. **Start MCP Server** (MCP Agent only):
+2. **Start MCP Server** (Multi-Agent System only):
 ```bash
-./bq_agent_app_mcp/mcp-toolbox/toolbox --prebuilt bigquery
+./bq_multi_agent_app/mcp-toolbox/toolbox --prebuilt bigquery
 ```
 
 3. **Run the Agent**:
@@ -101,7 +104,7 @@ adk web # or adk run
 
 ### Example Interactions
 
-**Basic Operations (All Implementations)**
+**Basic Operations (Both Implementations)**
 ```
 "What datasets are available in my project?"
 "Show me the schema of the sales_data table"
@@ -123,21 +126,34 @@ adk web # or adk run
 ## Architecture
 
 ### Common Foundation
-All implementations use:
+Both implementations use:
 - **Google Agent Development Kit (ADK)**: Framework for building AI agents
-- **BigQuery Toolset**: Direct access to BigQuery operations
 - **Gemini 2.5 Flash**: Large language model for natural language understanding
 - **Vertex AI**: Google Cloud's AI platform integration
+
+### ADK Agent Architecture
+```
+ADK Agent (bigquery_agent)
+└── BigQuery Toolset (ADK)
+    ├── list_dataset_ids
+    ├── get_dataset_info
+    ├── list_table_ids
+    ├── get_table_info
+    └── execute_sql
+```
 
 ### Multi-Agent System Architecture
 ```
 Root Agent (bigquery_ds_agent)
-├── BigQuery Tools (direct access)
-│   ├── list_dataset_ids
-│   ├── get_dataset_info
-│   ├── list_table_ids
-│   ├── get_table_info
-│   └── execute_sql
+├── BigQuery Tools (MCP Toolbox)
+│   ├── bigquery-list-dataset-ids
+│   ├── bigquery-get-dataset-info
+│   ├── bigquery-list-table-ids
+│   ├── bigquery-get-table-info
+│   ├── bigquery-execute-sql
+│   ├── bigquery-conversational-analytics
+│   ├── bigquery-forecast
+│   └── bigquery-sql
 └── DS Sub-Agent (ds_agent)
     ├── Python Code Execution
     ├── Data Visualization
@@ -148,15 +164,20 @@ Root Agent (bigquery_ds_agent)
 
 ```
 bq-agent-app/
-├── bq_agent_app/                    # Direct BigQuery Agent
-├── bq_agent_app_mcp/                # MCP BigQuery Agent
-│   └── mcp-toolbox/                 # MCP server installation
+├── bq_agent_adk/                    # ADK BigQuery Agent
+│   ├── agent.py                     # Main agent with ADK BigQuery tools
+│   ├── credentials.py               # Authentication configuration
+│   └── .env.example                 # Environment template
 ├── bq_multi_agent_app/              # Multi-Agent System
-│   ├── agent.py                     # Root agent with orchestration
-│   ├── subagents.py                 # Data science sub-agent
+│   ├── agent.py                     # Root agent with MCP integration
+│   ├── tools.py                     # MCP BigQuery tools + DS agent wrapper
 │   ├── prompts.py                   # Agent instructions
-│   ├── tools.py                     # BigQuery toolset
-│   └── credentials.py               # Authentication config
+│   ├── mcp-toolbox/                 # MCP server installation
+│   ├── sub_agents/
+│   │   └── ds_agents/
+│   │       ├── agent.py             # Data science agent
+│   │       └── prompts.py           # DS agent instructions
+│   └── .env.example                 # Environment template
 ├── vertex_extensions_setup/         # Vertex AI Extensions Management
 │   ├── utils.py                     # Shared utilities
 │   ├── setup_vertex_extensions.py   # Create extensions
@@ -181,14 +202,14 @@ bq-agent-app/
 gcloud auth application-default login
 ```
 
-### 2. OAuth2 Authentication
+### 2. OAuth2 Authentication (ADK Agent only)
 ```env
 # In .env file
 OAUTH_CLIENT_ID=your_client_id
 OAUTH_CLIENT_SECRET=your_client_secret
 ```
 
-### 3. Service Account
+### 3. Service Account (ADK Agent only)
 1. Download service account key as `service_account_key.json`
 2. Update `CREDENTIALS_TYPE` in `credentials.py`
 
@@ -196,11 +217,17 @@ OAUTH_CLIENT_SECRET=your_client_secret
 
 ## Configuration
 
-### Write Modes
+### Write Modes (ADK Agent only)
 Control BigQuery write access in `credentials.py`:
 - **ALLOWED**: Full write capabilities
 - **BLOCKED**: Read-only mode (recommended for production)
 - **PROTECTED**: Temporary data writes only
+
+### MCP Configuration (Multi-Agent System)
+The Multi-Agent System uses MCP (Model Context Protocol) for BigQuery operations:
+- Authentication handled automatically via Google Cloud credentials
+- MCP server runs on `http://127.0.0.1:5000`
+- No additional configuration required
 
 ## Security Considerations
 
@@ -213,8 +240,9 @@ Control BigQuery write access in `credentials.py`:
 
 - [Google Agent Development Kit Documentation](https://cloud.google.com/adk)
 - [BigQuery Documentation](https://cloud.google.com/bigquery/docs)
+- [Model Context Protocol](https://modelcontextprotocol.io/)
 - [Blog Post: BigQuery meets Google ADK and MCP](https://cloud.google.com/blog/products/ai-machine-learning/bigquery-meets-google-adk-and-mcp)
 
 ---
 
-*Built with ❤️ using Google Agent Development Kit and BigQuery*
+*Built with ❤️ using Google Agent Development Kit, BigQuery, and MCP*

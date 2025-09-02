@@ -2,7 +2,7 @@
 BigQuery Multi-Agent Application - Root Agent
 
 This is the main agent that orchestrates BigQuery data retrieval and data science analysis.
-It uses tools (not sub-agents) to prevent code execution errors.
+It uses MCP for BigQuery operations and ADK for data science code execution.
 """
 
 from datetime import date
@@ -24,7 +24,7 @@ root_agent = Agent(
         Today's date: {date_today}
 
         Your capabilities:
-        1. Query BigQuery databases using bigquery_toolset
+        1. Query BigQuery databases using MCP toolset
         2. Perform data science analysis using call_data_science_agent
         3. Create visualizations and statistical analysis
 
@@ -36,7 +36,7 @@ root_agent = Agent(
     ),
     instruction=return_instructions_root(),
     tools=[
-        bigquery_toolset,           # BigQuery database operations
+        *bigquery_toolset,          # BigQuery database operations via MCP
         call_data_science_agent,    # Data science analysis with code execution
     ],
 )

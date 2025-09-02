@@ -2,25 +2,19 @@
 Tools for BigQuery Multi-Agent Application
 
 This module provides:
-1. BigQuery toolset for database operations
+1. BigQuery toolset via MCP for database operations
 2. Data science agent wrapper for analysis with code execution
 """
 
 from google.adk.tools import ToolContext
 from google.adk.tools.agent_tool import AgentTool
-from google.adk.tools.bigquery.bigquery_toolset import BigQueryToolset
+from toolbox_core import ToolboxSyncClient
 
-from .credentials import credentials_config
 from .sub_agents.ds_agents.agent import ds_agent
 
-# BigQuery tools for database operations
-bigquery_toolset = BigQueryToolset(credentials_config=credentials_config, tool_filter=[
-    'list_dataset_ids',
-    'get_dataset_info',
-    'list_table_ids',
-    'get_table_info',
-    'execute_sql',
-])
+# BigQuery tools via MCP toolbox
+bigquery_toolbox = ToolboxSyncClient("http://127.0.0.1:5000")
+bigquery_toolset = bigquery_toolbox.load_toolset()
 
 
 async def call_data_science_agent(
