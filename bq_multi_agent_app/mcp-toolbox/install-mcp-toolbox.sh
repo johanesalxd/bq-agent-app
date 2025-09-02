@@ -8,10 +8,12 @@ set -e
 echo "Installing MCP Toolbox for BigQuery..."
 
 # Set the version (you can update this to the latest version)
-VERSION="v0.12.0"
+MCP_VERSION="v0.13.0"
+MCP_OS="linux"
+MCP_ARCH="amd64"
 
 # Download the appropriate binary
-DOWNLOAD_URL="https://storage.googleapis.com/genai-toolbox/${VERSION}/linux/amd64/toolbox"
+DOWNLOAD_URL="https://storage.googleapis.com/genai-toolbox/${MCP_VERSION}/${MCP_OS}/${MCP_ARCH}/toolbox"
 echo "Downloading MCP Toolbox from: $DOWNLOAD_URL"
 
 if command -v curl >/dev/null 2>&1; then

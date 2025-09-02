@@ -18,6 +18,14 @@ pip install -r requirements.txt
 
 # Setup MCP Toolbox (for Multi-Agent System)
 cd bq_multi_agent_app/mcp-toolbox
+
+# Update the script parameters for your OS before running
+# Edit install-mcp-toolbox.sh and update:
+# - MCP_VERSION: choose the version from https://github.com/googleapis/genai-toolbox/releases
+# - MCP_OS: "linux" for Linux, "darwin" for macOS
+# - MCP_ARCH: "amd64" for Intel/x64, "arm64" for Apple Silicon
+# Example for macOS Apple Silicon: MCP_OS="darwin" MCP_ARCH="arm64"
+
 chmod +x install-mcp-toolbox.sh
 ./install-mcp-toolbox.sh
 cd ../..
@@ -94,7 +102,14 @@ GOOGLE_CLOUD_LOCATION=us-central1
 
 2. **Start MCP Server** (Multi-Agent System only):
 ```bash
-./bq_multi_agent_app/mcp-toolbox/toolbox --prebuilt bigquery
+# Set environment variables (required for MCP Toolbox)
+cd bq_multi_agent_app
+source .env
+export BIGQUERY_PROJECT=$GOOGLE_CLOUD_PROJECT
+
+# Start the MCP server
+./mcp-toolbox/toolbox --prebuilt bigquery
+cd ..
 ```
 
 3. **Run the Agent**:
