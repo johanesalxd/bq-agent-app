@@ -20,15 +20,15 @@ def create_code_interpreter_extension(project_id: str, region: str = "us-central
     access_token = get_access_token()
     headers = {"Authorization": f"Bearer {access_token}"}
 
-    url = f"https://{region}-aiplatform.googleapis.com/v1beta1/projects/{project_id}/locations/{region}/extensions"
+    url = f"https://{region}-aiplatform.googleapis.com/v1beta1/projects/{project_id}/locations/{region}/extensions:import"
 
     # Extension configuration
     extension_data = {
         "displayName": "Code Interpreter Extension",
         "description": "Code Interpreter for data analysis",
         "manifest": {
-            "name": "code_interpreter",
-            "description": "Code Interpreter Extension",
+            "name": "code_interpreter_tool",
+            "description": "A Google Code Interpreter tool",
             "apiSpec": {
                 "openApiGcsUri": "gs://vertex-extension-public/code_interpreter.yaml"
             },
