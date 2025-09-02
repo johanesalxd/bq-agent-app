@@ -8,8 +8,24 @@ A powerful AI-powered data analysis agent that combines Google BigQuery with the
 ```bash
 git clone https://github.com/johanesalxd/bq-agent-app.git
 cd bq-agent-app
-./setup.sh
+
+# Create virtual environment
+python3 -m venv .venv
 source .venv/bin/activate
+
+# Install Python dependencies
+pip install -r requirements.txt
+
+# Setup MCP Toolbox (for MCP agent only)
+cd bq_agent_app_mcp/mcp-toolbox
+chmod +x install-mcp-toolbox.sh
+./install-mcp-toolbox.sh
+cd ../..
+
+# Setup Multi Agent environment
+cd bq_multi_agent_app
+cp .env.example .env
+cd ..
 ```
 
 2. **Authentication**
@@ -17,7 +33,13 @@ source .venv/bin/activate
 gcloud auth application-default login
 ```
 
-3. **Choose Your Implementation** (see comparison below)
+3. **Vertex AI Extensions Setup** (for Multi-Agent System)
+For the Multi-Agent System that uses Vertex AI Code Interpreter, you'll need to set up extensions to prevent duplicate creation. See the [Vertex Extensions Guide](vertex_extensions_setup/VERTEX_EXTENSIONS_GUIDE.md) for detailed instructions on:
+- Creating and managing Vertex AI Code Interpreter extensions
+- Setting up environment variables to prevent duplicates
+- Cleaning up unused extensions
+
+4. **Choose Your Implementation** (see comparison below)
 
 ## Available Implementations
 
@@ -134,7 +156,11 @@ bq-agent-app/
 │   ├── prompts.py                   # Agent instructions
 │   ├── tools.py                     # BigQuery toolset
 │   └── credentials.py               # Authentication config
-├── setup.sh                         # Quick setup script
+├── vertex_extensions_setup/         # Vertex AI Extensions Management
+│   ├── utils.py                     # Shared utilities
+│   ├── setup_vertex_extensions.py   # Create extensions
+│   ├── cleanup_vertex_extensions.py # Clean up extensions
+│   └── VERTEX_EXTENSIONS_GUIDE.md   # Detailed guide
 └── README.md
 ```
 
