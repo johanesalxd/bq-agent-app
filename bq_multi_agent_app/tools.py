@@ -11,7 +11,9 @@ import os
 from dotenv import load_dotenv
 from google.adk.tools import ToolContext
 from google.adk.tools.agent_tool import AgentTool
-from toolbox_core import ToolboxSyncClient
+from google.adk.tools.mcp_tool.mcp_session_manager import \
+    StreamableHTTPConnectionParams
+from google.adk.tools.mcp_tool.mcp_toolset import MCPToolset
 
 from .sub_agents.ds_agents.agent import ds_agent
 
@@ -22,8 +24,15 @@ load_dotenv()
 TOOLBOX_URL = os.getenv("TOOLBOX_URL", "http://127.0.0.1:5000")
 
 # BigQuery tools via MCP toolbox
-bigquery_toolbox = ToolboxSyncClient(TOOLBOX_URL)
-bigquery_toolset = bigquery_toolbox.load_toolset()
+# Use MCPToolset with StreamableHTTPConnectionParams for proper MCP integration
+bigquery_toolset = MCPToolset(
+    connection_params=StreamableHTTPConnectionParams(
+        url=f"{TOOLBOX_URL}/mcp",  # MCP endpoint
+        headers={}  # Add auth headers if needed
+    ),
+    # Optional: Filter specific tools if needed
+    # tool_filter=['bigquery-execute-sql', 'bigquery-list-tables', 'bigquery-describe-table']
+)
 
 
 async def call_data_science_agent(

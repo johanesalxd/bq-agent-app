@@ -1,5 +1,4 @@
 google-adk
-toolbox-core
 pandas
 numpy
 matplotlib

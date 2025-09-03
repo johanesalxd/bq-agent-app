@@ -36,7 +36,7 @@ root_agent = Agent(
     ),
     instruction=return_instructions_root(),
     tools=[
-        *bigquery_toolset,          # BigQuery database operations via MCP
+        bigquery_toolset,           # BigQuery database operations via MCP
         call_data_science_agent,    # Data science analysis with code execution
     ],
 )
