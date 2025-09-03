@@ -4,3 +4,5 @@ pandas
 numpy
 matplotlib
 seaborn
+python-dotenv
+requests

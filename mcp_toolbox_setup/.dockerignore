@@ -1,0 +1,16 @@
+# Reference .gitignore patterns
+.venv/
+__pycache__/
+.env
+
+# Docker-specific exclusions
+Dockerfile
+.dockerignore
+
+# Development files
+README.md
+*.md
+
+# Git
+.git
+.gitignore

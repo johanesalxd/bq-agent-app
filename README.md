@@ -17,7 +17,7 @@ source .venv/bin/activate
 pip install -r requirements.txt
 
 # Setup MCP Toolbox (for Multi-Agent System)
-cd bq_multi_agent_app/mcp-toolbox
+cd mcp_toolbox_setup
 
 # Update the script parameters for your OS before running
 # Edit install-mcp-toolbox.sh and update:
@@ -28,12 +28,12 @@ cd bq_multi_agent_app/mcp-toolbox
 
 chmod +x install-mcp-toolbox.sh
 ./install-mcp-toolbox.sh
-cd ../..
+cd ..
 
 # Setup environment
-cd bq_multi_agent_app  # or bq_agent_adk
 cp .env.example .env
-cd ..
+# For cloud deployment, also create:
+# cp .env.cloud.example .env.cloud
 ```
 
 2. **Authentication**
@@ -46,6 +46,11 @@ For the Multi-Agent System that uses Vertex AI Code Interpreter, you'll need to 
 - Creating and managing Vertex AI Code Interpreter extensions
 - Setting up environment variables to prevent duplicates
 - Cleaning up unused extensions
+
+## Setup Guides
+
+- [Vertex Extensions Setup Guide](vertex_extensions_setup/VERTEX_EXTENSIONS_GUIDE.md) - Complete guide for setting up Vertex AI Extensions for code interpretation
+- [MCP Toolbox Deployment Guide](mcp_toolbox_setup/MCP_TOOLBOX_GUIDE.md) - Deploy MCP toolbox to Google Cloud Run for production use
 
 4. **Choose Your Implementation** (see comparison below)
 
@@ -103,13 +108,11 @@ GOOGLE_CLOUD_LOCATION=us-central1
 2. **Start MCP Server** (Multi-Agent System only):
 ```bash
 # Set environment variables (required for MCP Toolbox)
-cd bq_multi_agent_app
 source .env
-export BIGQUERY_PROJECT=$GOOGLE_CLOUD_PROJECT
+export BIGQUERY_PROJECT=$BIGQUERY_PROJECT
 
 # Start the MCP server
-./mcp-toolbox/toolbox --prebuilt bigquery
-cd ..
+./mcp_toolbox_setup/toolbox --prebuilt bigquery
 ```
 
 3. **Run the Agent**:
@@ -251,11 +254,86 @@ The Multi-Agent System uses MCP (Model Context Protocol) for BigQuery operations
 - Review SQL queries executed by agents
 - Consider read-only mode for production
 
+## Cloud Run Deployment
+
+Deploy the MCP Toolbox to Google Cloud Run for production use or to make it accessible from anywhere. This allows your local ADK application to connect to a cloud-hosted toolbox.
+
+### Prerequisites
+
+- Docker installed locally
+- Google Cloud CLI (`gcloud`) installed and authenticated
+- Google Cloud Project with billing enabled
+
+### Quick Deployment
+
+1. **Setup Cloud Environment**
+```bash
+# Copy and configure cloud environment
+cp .env.cloud.example .env.cloud
+```
+
+2. **Deploy to Cloud Run**
+```bash
+# Run the deployment script
+cd mcp_toolbox_setup
+chmod +x deploy.sh
+./deploy.sh
+```
+
+The script will:
+- Enable required Google Cloud APIs
+- Create a service account with BigQuery permissions
+- Build and push the Docker image
+- Deploy to Cloud Run with `--allow-unauthenticated`
+- Provide the service URL for access
+
+### Environment Configuration
+
+The deployment uses different environment files:
+- **Local**: `.env` (for local development)
+- **Cloud**: `.env.cloud` (for Cloud Run deployment)
+
+### Architecture in Cloud Run
+
+```
+Cloud Run Container
+└── MCP Toolbox Server (port 5000)
+    └── --prebuilt bigquery
+```
+
+**Usage Pattern:**
+- **Cloud Run**: Hosts the MCP toolbox server
+- **Local Development**: ADK application connects to cloud toolbox
+- **Production**: Multiple ADK instances can share the same toolbox
+
+### Advanced Configuration with tools.yaml
+
+For more complex deployments requiring custom configurations, refer to the official documentation: https://googleapis.github.io/genai-toolbox/how-to/deploy_toolbox/
+
+The `tools.yaml` approach allows for:
+- Multiple data source configurations
+- Custom authentication settings
+- Advanced BigQuery configurations
+- Secret management via Google Secret Manager
+
+Example use cases for `tools.yaml`:
+- Connecting to multiple BigQuery projects
+- Custom database connections (AlloyDB, Cloud SQL)
+- Advanced security configurations
+- Custom tool configurations
+
+### Troubleshooting
+
+- **Container fails to start**: Check Cloud Run logs for port binding issues
+- **Permission denied**: Verify service account has BigQuery permissions
+- **Toolbox connection failed**: Ensure TOOLBOX_URL is set to `http://localhost:5000`
+
 ## Related Resources
 
 - [Google Agent Development Kit Documentation](https://cloud.google.com/adk)
 - [BigQuery Documentation](https://cloud.google.com/bigquery/docs)
 - [Model Context Protocol](https://modelcontextprotocol.io/)
+- [MCP Toolbox Cloud Run Deployment Guide](https://googleapis.github.io/genai-toolbox/how-to/deploy_toolbox/)
 - [Blog Post: BigQuery meets Google ADK and MCP](https://cloud.google.com/blog/products/ai-machine-learning/bigquery-meets-google-adk-and-mcp)
 
 ---

@@ -1,5 +1,5 @@
 .venv/
 __pycache__/
-toolbox
+mcp_toolbox_setup/toolbox
 mise.toml
 .env

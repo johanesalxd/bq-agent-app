@@ -6,14 +6,23 @@ This module provides:
 2. Data science agent wrapper for analysis with code execution
 """
 
+import os
+
+from dotenv import load_dotenv
 from google.adk.tools import ToolContext
 from google.adk.tools.agent_tool import AgentTool
 from toolbox_core import ToolboxSyncClient
 
 from .sub_agents.ds_agents.agent import ds_agent
 
+# Load environment variables
+load_dotenv()
+
+# Get toolbox URL from environment, default to local development
+TOOLBOX_URL = os.getenv("TOOLBOX_URL", "http://127.0.0.1:5000")
+
 # BigQuery tools via MCP toolbox
-bigquery_toolbox = ToolboxSyncClient("http://127.0.0.1:5000")
+bigquery_toolbox = ToolboxSyncClient(TOOLBOX_URL)
 bigquery_toolset = bigquery_toolbox.load_toolset()
 
 
