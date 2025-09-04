@@ -107,7 +107,7 @@ GOOGLE_CLOUD_LOCATION=us-central1
 
 2. **Start MCP Server** (Multi-Agent System only):
 ```bash
-# Set environment variables (required for MCP Toolbox)
+# Set environment variables
 export $(cat .env | grep -v '^#' | xargs)
 
 # Start the MCP server
@@ -116,8 +116,6 @@ export $(cat .env | grep -v '^#' | xargs)
 
 3. **Run the Agent**:
 ```bash
-# Load environment and run with uv
-export $(cat .env | grep -v '^#' | xargs)
 uv run adk web  # or uv run adk run
 ```
 
@@ -213,24 +211,6 @@ bq-agent-app/
 - **uv** package manager ([installation guide](https://docs.astral.sh/uv/getting-started/installation/))
 - **Google Cloud Project** with BigQuery enabled
 - **Google Cloud credentials**
-
-## Package Management with uv
-
-This project uses `uv` for fast, reliable dependency management:
-
-```bash
-# Install dependencies
-uv sync
-
-# Add new dependency
-uv add package-name
-
-# Run commands in the environment
-uv run <command>
-
-# Activate environment manually
-source .venv/bin/activate
-```
 
 ## Authentication Options
 
