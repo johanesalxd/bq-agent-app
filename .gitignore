@@ -3,3 +3,4 @@ __pycache__/
 mcp_toolbox_setup/toolbox
 mise.toml
 .env
+.env.cloud

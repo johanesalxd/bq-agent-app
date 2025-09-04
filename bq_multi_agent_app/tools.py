@@ -13,19 +13,19 @@ from google.adk.tools import ToolContext
 from google.adk.tools.agent_tool import AgentTool
 from google.adk.tools.mcp_tool.mcp_session_manager import \
     StreamableHTTPConnectionParams
-from google.adk.tools.mcp_tool.mcp_toolset import MCPToolset
+from google.adk.tools.mcp_tool.mcp_toolset import McpToolset
 
 from .sub_agents.ds_agents.agent import ds_agent
 
 # Load environment variables
-load_dotenv()
+load_dotenv('.env.cloud')
 
 # Get toolbox URL from environment, default to local development
 TOOLBOX_URL = os.getenv("TOOLBOX_URL", "http://127.0.0.1:5000")
 
 # BigQuery tools via MCP toolbox
-# Use MCPToolset with StreamableHTTPConnectionParams for proper MCP integration
-bigquery_toolset = MCPToolset(
+# Use McpToolset with StreamableHTTPConnectionParams for proper MCP integration
+bigquery_toolset = McpToolset(
     connection_params=StreamableHTTPConnectionParams(
         url=f"{TOOLBOX_URL}/mcp",  # MCP endpoint
         headers={}  # Add auth headers if needed
