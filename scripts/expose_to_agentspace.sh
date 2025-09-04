@@ -1,12 +1,11 @@
-export PROJECT_ID="johanesa-playground-326616" # String
-export PROJECT_NUMBER="605626490127" # String
+export PROJECT_ID="your-project-id" # String
+export PROJECT_NUMBER="your-project-number" # String
 
-export REASONING_ENGINE_ID="6293573771064246272" # String - Normally a 18-digit number
+export REASONING_ENGINE_ID="your-agent-engine-id" # String - Normally a 18-digit number
 export REASONING_ENGINE_LOCATION="us-central1" # String - e.g. us-central1
 export REASONING_ENGINE="projects/${PROJECT_ID}/locations/${REASONING_ENGINE_LOCATION}/reasoningEngines/${REASONING_ENGINE_ID}"
 
-
-export AS_APP="my-agentspace_1757001244513" # String - Find it in Google Cloud AI Applications
+export AS_APP="your-agentspace-id" # String - Find it in Google Cloud AI Applications
 export AS_LOCATION="global" # String - e.g. global, eu, us
 
 export AGENT_DISPLAY_NAME="bq-agent-app" # String - this will appear as the name of the agent into your AgentSpace
@@ -17,7 +16,6 @@ EOF
 export AGENT_DESCRIPTION
 
 DISCOVERY_ENGINE_PROD_API_ENDPOINT="https://discoveryengine.googleapis.com"
-
 
 deploy_agent_to_agentspace() {
     curl -X POST \
