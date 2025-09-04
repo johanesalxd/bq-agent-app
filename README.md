@@ -287,6 +287,27 @@ After deployment:
 - The web UI will be available for interactive testing
 - Cloud tracing is enabled for monitoring and debugging
 
+#### Option C: Deploy Agent to Agent Engine
+```bash
+# Set environment variables
+cp .env.example bq_multi_agent_app/.env
+export $(cat .env | grep -v '^#' | xargs)
+
+uv run adk deploy agent_engine \
+  --project=your-project-id \
+  --region=us-central1 \
+  --staging_bucket="gs://your-project-id-adk-staging" \
+  --display_name="BigQuery Multi-Agent App" \
+  --trace_to_cloud \
+  ./bq_multi_agent_app
+```
+
+After deployment:
+- Agent is deployed to Vertex AI Agent Engine with managed sessions
+- Provides programmatic access via the Agent Engine API
+- Integrated with Vertex AI ecosystem for enterprise use
+- Supports both synchronous and asynchronous operations
+
 ### Deployment Combinations
 
 | MCP Toolbox | Agent | Use Case |
@@ -294,6 +315,7 @@ After deployment:
 | Local | Local | Development and testing |
 | Cloud Run | Local | Development with shared toolbox |
 | Cloud Run | Cloud Run | Full production deployment |
+| Cloud Run | Agent Engine | Enterprise deployment with managed sessions |
 
 **Note**: Ensure your service account has the necessary BigQuery permissions for your project. For advanced MCP configurations, refer to the [official documentation](https://googleapis.github.io/genai-toolbox/how-to/deploy_toolbox/).
 
