@@ -37,7 +37,7 @@ The MCP toolbox provides BigQuery database operations through a standardized pro
    ```
 
 4. **Update your application configuration:**
-   - Update the `TOOLBOX_URL` in your application's `.env.cloud` file to point to your deployed Cloud Run service
+   - Update the `TOOLBOX_URL` in your application's `.env` file to point to your deployed Cloud Run service
    - Ensure your application loads environment variables using `python-dotenv`
 
 ## File Structure

@@ -32,8 +32,6 @@ cd ..
 
 # Setup environment
 cp .env.example .env
-# For cloud deployment, also create:
-# cp .env.cloud.example .env.cloud
 ```
 
 2. **Authentication**
@@ -269,7 +267,7 @@ Deploy the MCP Toolbox to Google Cloud Run for production use or to make it acce
 1. **Setup Cloud Environment**
 ```bash
 # Copy and configure cloud environment
-cp .env.cloud.example .env.cloud
+cp .env.example .env
 ```
 
 2. **Deploy to Cloud Run**
@@ -286,12 +284,6 @@ The script will:
 - Build and push the Docker image
 - Deploy to Cloud Run with `--allow-unauthenticated`
 - Provide the service URL for access
-
-### Environment Configuration
-
-The deployment uses different environment files:
-- **Local**: `.env` (for local development)
-- **Cloud**: `.env.cloud` (for Cloud Run deployment)
 
 ### Architecture in Cloud Run
 

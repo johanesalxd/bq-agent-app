@@ -18,7 +18,7 @@ from google.adk.tools.mcp_tool.mcp_toolset import McpToolset
 from .sub_agents.ds_agents.agent import ds_agent
 
 # Load environment variables
-load_dotenv('.env.cloud')
+load_dotenv('.env')
 
 # Get toolbox URL from environment, default to local development
 TOOLBOX_URL = os.getenv("TOOLBOX_URL", "http://127.0.0.1:5000")
