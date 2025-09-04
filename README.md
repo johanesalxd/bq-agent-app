@@ -9,12 +9,14 @@ A powerful AI-powered data analysis agent that combines Google BigQuery with the
 git clone https://github.com/johanesalxd/bq-agent-app.git
 cd bq-agent-app
 
-# Create virtual environment
-python3 -m venv .venv
-source .venv/bin/activate
+# Install uv (if not already installed)
+# Visit: https://docs.astral.sh/uv/getting-started/installation/
 
-# Install Python dependencies
-pip install -r requirements.txt
+# Install dependencies with uv
+uv sync
+
+# Activate environment
+source .venv/bin/activate
 
 # Setup MCP Toolbox (for Multi-Agent System)
 cd mcp_toolbox_setup
@@ -106,8 +108,7 @@ GOOGLE_CLOUD_LOCATION=us-central1
 2. **Start MCP Server** (Multi-Agent System only):
 ```bash
 # Set environment variables (required for MCP Toolbox)
-source .env
-export BIGQUERY_PROJECT=$BIGQUERY_PROJECT
+export $(cat .env | grep -v '^#' | xargs)
 
 # Start the MCP server
 ./mcp_toolbox_setup/toolbox --prebuilt bigquery
@@ -115,7 +116,9 @@ export BIGQUERY_PROJECT=$BIGQUERY_PROJECT
 
 3. **Run the Agent**:
 ```bash
-adk web # or adk run
+# Load environment and run with uv
+export $(cat .env | grep -v '^#' | xargs)
+uv run adk web  # or uv run adk run
 ```
 
 ### Example Interactions
@@ -180,6 +183,8 @@ Root Agent (bigquery_ds_agent)
 
 ```
 bq-agent-app/
+├── pyproject.toml                   # uv package configuration
+├── uv.lock                          # Dependency lock file
 ├── bq_agent_adk/                    # ADK BigQuery Agent
 │   ├── agent.py                     # Main agent with ADK BigQuery tools
 │   ├── credentials.py               # Authentication configuration
@@ -204,9 +209,28 @@ bq-agent-app/
 
 ## Prerequisites
 
-- Python 3.8 or higher
-- Google Cloud Project with BigQuery enabled
-- Google Cloud credentials
+- **Python 3.11+**
+- **uv** package manager ([installation guide](https://docs.astral.sh/uv/getting-started/installation/))
+- **Google Cloud Project** with BigQuery enabled
+- **Google Cloud credentials**
+
+## Package Management with uv
+
+This project uses `uv` for fast, reliable dependency management:
+
+```bash
+# Install dependencies
+uv sync
+
+# Add new dependency
+uv add package-name
+
+# Run commands in the environment
+uv run <command>
+
+# Activate environment manually
+source .venv/bin/activate
+```
 
 ## Authentication Options
 
