@@ -8,7 +8,7 @@ Note: This agent must be wrapped as a tool (not used as sub-agent) to prevent
 function call interpretation errors.
 """
 
-from google.adk.agents.llm_agent import Agent
+from google.adk.agents import Agent
 from google.adk.code_executors.vertex_ai_code_executor import \
     VertexAiCodeExecutor
 

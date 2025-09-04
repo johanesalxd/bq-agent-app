@@ -7,7 +7,7 @@ It uses MCP for BigQuery operations and ADK for data science code execution.
 
 from datetime import date
 
-from google.adk.agents.llm_agent import Agent
+from google.adk.agents import Agent
 
 from .prompts import return_instructions_root
 from .tools import bigquery_toolset

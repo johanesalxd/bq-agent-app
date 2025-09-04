@@ -12,6 +12,7 @@ dependencies = [
     "matplotlib>=3.8.0",
     "seaborn>=0.13.0",
     "python-dotenv>=1.0.1",
+    "absl-py>=2.2.2",
 ]
 
 [build-system]
