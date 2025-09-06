@@ -1,6 +1,6 @@
 .venv/
 __pycache__/
-mcp_toolbox_setup/toolbox
+setup/mcp_toolbox/toolbox
 mise.toml
 .env
 *.whl

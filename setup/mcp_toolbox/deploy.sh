@@ -2,9 +2,9 @@
 set -e
 
 # Load environment variables if .env file exists
-if [ -f "../.env" ]; then
-    echo "Loading environment from ../.env"
-    export $(grep -v '^#' ../.env | xargs)
+if [ -f "../../.env" ]; then
+    echo "Loading environment from ../../.env"
+    export $(grep -v '^#' ../../.env | xargs)
 fi
 
 # Configuration

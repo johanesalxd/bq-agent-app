@@ -15,7 +15,7 @@ Use environment variables to specify which extension to use and scripts to manag
 ### 1. Create a New Extension
 
 ```bash
-python setup_vertex_extensions.py
+python setup/vertex_extensions/setup_vertex_extensions.py
 ```
 
 This will:
@@ -28,13 +28,13 @@ This will:
 Preview what will be deleted:
 
 ```bash
-python cleanup_vertex_extensions.py --dry-run --keep-id YOUR_EXTENSION_ID
+python setup/vertex_extensions/cleanup_vertex_extensions.py --dry-run --keep-id YOUR_EXTENSION_ID
 ```
 
 Delete duplicates (keeping the specified extension):
 
 ```bash
-python cleanup_vertex_extensions.py --keep-id YOUR_EXTENSION_ID
+python setup/vertex_extensions/cleanup_vertex_extensions.py --keep-id YOUR_EXTENSION_ID
 ```
 
 ## Environment Configuration
@@ -50,7 +50,7 @@ CODE_INTERPRETER_EXTENSION_NAME=projects/605626490127/locations/us-central1/exte
 
 ### setup_vertex_extensions.py
 
-**Command**: `python setup_vertex_extensions.py`
+**Command**: `python setup/vertex_extensions/setup_vertex_extensions.py`
 
 **What it does**:
 - Creates a new Code Interpreter extension
@@ -62,8 +62,8 @@ CODE_INTERPRETER_EXTENSION_NAME=projects/605626490127/locations/us-central1/exte
 ### cleanup_vertex_extensions.py
 
 **Commands**:
-- `python cleanup_vertex_extensions.py --dry-run --keep-id EXTENSION_ID` - Preview cleanup
-- `python cleanup_vertex_extensions.py --keep-id EXTENSION_ID` - Delete duplicates
+- `python setup/vertex_extensions/cleanup_vertex_extensions.py --dry-run --keep-id EXTENSION_ID` - Preview cleanup
+- `python setup/vertex_extensions/cleanup_vertex_extensions.py --keep-id EXTENSION_ID` - Delete duplicates
 
 **What it does**:
 - Lists all Code Interpreter extensions (max. 100)
@@ -80,8 +80,8 @@ CODE_INTERPRETER_EXTENSION_NAME=projects/605626490127/locations/us-central1/exte
 ## Summary
 
 This solution provides:
-- ✅ Simple extension creation with `python setup_vertex_extensions.py`
-- ✅ Easy cleanup with `python cleanup_vertex_extensions.py --keep-id EXTENSION_ID`
+- ✅ Simple extension creation with `python setup/vertex_extensions/setup_vertex_extensions.py`
+- ✅ Easy cleanup with `python setup/vertex_extensions/cleanup_vertex_extensions.py --keep-id EXTENSION_ID`
 - ✅ Prevents duplicate extensions via environment variables
 - ✅ Safe dry-run options
 - ✅ Tool-based architecture for error prevention

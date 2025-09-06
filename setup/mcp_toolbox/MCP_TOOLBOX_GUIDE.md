@@ -24,14 +24,14 @@ The MCP toolbox provides BigQuery database operations through a standardized pro
 
 2. **Install the MCP toolbox locally:**
    ```bash
-   cd mcp_toolbox_setup
+   cd setup/mcp_toolbox
    chmod +x install-mcp-toolbox.sh
    ./install-mcp-toolbox.sh
    ```
 
 3. **Deploy to Cloud Run:**
    ```bash
-   cd mcp_toolbox_setup
+   cd setup/mcp_toolbox
    chmod +x deploy.sh
    ./deploy.sh
    ```
@@ -43,7 +43,7 @@ The MCP toolbox provides BigQuery database operations through a standardized pro
 ## File Structure
 
 ```
-mcp_toolbox_setup/
+setup/mcp_toolbox/
 ├── MCP_TOOLBOX_GUIDE.md          # This guide
 ├── install-mcp-toolbox.sh        # Local toolbox installation script
 ├── Dockerfile                    # Container definition for Cloud Run

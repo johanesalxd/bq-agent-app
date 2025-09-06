@@ -1,6 +1,6 @@
 # BigQuery Agent with Google ADK
 
-A powerful AI-powered data analysis agent that combines Google BigQuery with the Google Agent Development Kit (ADK) to enable natural language interactions with your data warehouse. Choose from two implementations based on your needs.
+A powerful AI-powered data analysis agent that combines Google BigQuery with the Google Agent Development Kit (ADK) to enable natural language interactions with your data warehouse.
 
 ## Quick Start
 
@@ -24,7 +24,7 @@ uv sync
 source .venv/bin/activate
 
 # Setup MCP Toolbox (for Multi-Agent System)
-cd mcp_toolbox_setup
+cd setup/mcp_toolbox
 
 # Update the script parameters for your OS before running
 # Edit install-mcp-toolbox.sh and update:
@@ -35,14 +35,14 @@ cd mcp_toolbox_setup
 
 chmod +x install-mcp-toolbox.sh
 ./install-mcp-toolbox.sh
-cd ..
+cd ../..
 
 # Configure the environment
 cp .env.example .env
 export $(cat .env | grep -v '^#' | xargs)
 
 # Run the MCP server
-./mcp_toolbox_setup/toolbox --prebuilt bigquery
+./setup/mcp_toolbox/toolbox --prebuilt bigquery
 
 # Run ADK
 uv run adk web
@@ -50,29 +50,32 @@ uv run adk web
 
 ## Additional Guides
 
-- [Vertex Extensions Setup Guide](vertex_extensions_setup/VERTEX_EXTENSIONS_GUIDE.md) - Complete guide for setting up Vertex AI Extensions for code interpretation
-- [MCP Toolbox Deployment Guide](mcp_toolbox_setup/MCP_TOOLBOX_GUIDE.md) - Deploy MCP toolbox to Google Cloud Run for production use
+- [Vertex Extensions Setup Guide](setup/vertex_extensions/VERTEX_EXTENSIONS_GUIDE.md) - Complete guide for setting up Vertex AI Extensions for code interpretation
+- [MCP Toolbox Deployment Guide](setup/mcp_toolbox/MCP_TOOLBOX_GUIDE.md) - Deploy MCP toolbox to Google Cloud Run for production use
 
-## Available Implementations
+## Implementation
 
-| Feature | ADK Agent | Multi-Agent System |
-|---------|-----------|-------------------|
-| **Directory** | `bq_agent_adk/` | `bq_multi_agent_app/` |
-| **Setup Complexity** | Simple | Moderate |
-| **BigQuery Operations** | ✅ | ✅ |
-| **MCP Protocol Support** | ❌ | ✅ |
-| **Python Data Science** | ❌ | ✅ |
-| **Statistical Analysis** | ❌ | ✅ |
-| **Data Visualization** | ❌ | ✅ |
-| **Multi-Agent Orchestration** | ❌ | ✅ |
-| **Additional Dependencies** | None | MCP Toolbox |
+This project provides a comprehensive **Multi-Agent System** for BigQuery analytics with advanced data science capabilities.
 
-### When to Use Which
+| Feature | Multi-Agent System |
+|---------|-------------------|
+| **Directory** | `bq_multi_agent_app/` |
+| **Setup Complexity** | Moderate |
+| **BigQuery Operations** | ✅ |
+| **MCP Protocol Support** | ✅ |
+| **Python Data Science** | ✅ |
+| **Statistical Analysis** | ✅ |
+| **Data Visualization** | ✅ |
+| **Multi-Agent Orchestration** | ✅ |
+| **Additional Dependencies** | MCP Toolbox |
 
-- **ADK Agent**: Basic BigQuery queries and exploration, simple setup
-- **Multi-Agent System**: Advanced analytics, data science workflows, comprehensive analysis with visualizations
+### Key Benefits
 
-## Core Features (Both Implementations)
+- **Advanced Analytics**: Complete data science workflows with comprehensive analysis and visualizations
+- **Multi-Agent Architecture**: Root agent orchestrates specialized sub-agents for different tasks
+- **MCP Integration**: Uses Model Context Protocol for standardized BigQuery operations
+
+## Core Features
 
 - 🔍 **Dataset Discovery**: List and explore BigQuery datasets
 - 📊 **Table Analysis**: Get detailed schema and metadata information
@@ -80,7 +83,7 @@ uv run adk web
 - 🤖 **AI-Powered**: Uses Gemini 2.5 Flash for intelligent query understanding
 - 🔐 **Flexible Authentication**: Multiple authentication methods supported
 
-## Multi-Agent System Exclusive Features
+## Advanced Features
 
 - 🎯 **Multi-Agent Orchestration**: Root agent delegates tasks to specialized sub-agents
 - 🐍 **Python Analytics**: Stateful code execution for advanced data science workflows
@@ -95,14 +98,14 @@ uv run adk web
 
 ### Example Interactions
 
-**Basic Operations (Both Implementations)**
+**Basic Operations**
 ```
 "What datasets are available in my project?"
 "Show me the schema of the sales_data table"
 "Find the top 10 customers by revenue this year"
 ```
 
-**Advanced Analytics (Multi-Agent Only)**
+**Advanced Analytics**
 ```
 "Analyze sales trends over the last 12 months and create a visualization"
 → Root agent retrieves data, DS agent creates trend analysis with charts
@@ -116,22 +119,11 @@ uv run adk web
 
 ## Architecture
 
-### Common Foundation
-Both implementations use:
+### Foundation
+The system is built on:
 - **Google Agent Development Kit (ADK)**: Framework for building AI agents
 - **Gemini 2.5 Flash**: Large language model for natural language understanding
 - **Vertex AI**: Google Cloud's AI platform integration
-
-### ADK Agent Architecture
-```
-ADK Agent (bigquery_agent)
-└── BigQuery Toolset (ADK)
-    ├── list_dataset_ids
-    ├── get_dataset_info
-    ├── list_table_ids
-    ├── get_table_info
-    └── execute_sql
-```
 
 ### Multi-Agent System Architecture
 ```
@@ -157,25 +149,28 @@ Root Agent (bigquery_ds_agent)
 bq-agent-app/
 ├── pyproject.toml                   # uv package configuration
 ├── uv.lock                          # Dependency lock file
-├── bq_agent_adk/                    # ADK BigQuery Agent
-│   ├── agent.py                     # Main agent with ADK BigQuery tools
-│   ├── credentials.py               # Authentication configuration
-│   └── .env.example                 # Environment template
 ├── bq_multi_agent_app/              # Multi-Agent System
 │   ├── agent.py                     # Root agent with MCP integration
 │   ├── tools.py                     # MCP BigQuery tools + DS agent wrapper
 │   ├── prompts.py                   # Agent instructions
-│   ├── mcp-toolbox/                 # MCP server installation
-│   ├── sub_agents/
-│   │   └── ds_agents/
-│   │       ├── agent.py             # Data science agent
-│   │       └── prompts.py           # DS agent instructions
-│   └── .env.example                 # Environment template
-├── vertex_extensions_setup/         # Vertex AI Extensions Management
-│   ├── utils.py                     # Shared utilities
-│   ├── setup_vertex_extensions.py   # Create extensions
-│   ├── cleanup_vertex_extensions.py # Clean up extensions
-│   └── VERTEX_EXTENSIONS_GUIDE.md   # Detailed guide
+│   └── sub_agents/
+│       └── ds_agents/
+│           ├── agent.py             # Data science agent
+│           └── prompts.py           # DS agent instructions
+├── setup/                           # Setup and deployment tools
+│   ├── mcp_toolbox/                 # MCP Toolbox setup
+│   │   ├── install-mcp-toolbox.sh   # Local installation script
+│   │   ├── deploy.sh                # Cloud Run deployment
+│   │   ├── Dockerfile               # Container definition
+│   │   └── MCP_TOOLBOX_GUIDE.md     # Deployment guide
+│   ├── vertex_extensions/           # Vertex AI Extensions Management
+│   │   ├── setup_vertex_extensions.py   # Create extensions
+│   │   ├── cleanup_vertex_extensions.py # Clean up extensions
+│   │   ├── utils.py                 # Shared utilities
+│   │   └── VERTEX_EXTENSIONS_GUIDE.md   # Setup guide
+│   └── agent_engine/                # Agent Engine deployment
+│       ├── expose_to_agentspace.sh  # AgentSpace deployment
+│       └── test_agent_engine.py     # Testing utilities
 └── README.md
 ```
 
@@ -185,37 +180,6 @@ bq-agent-app/
 - **uv** package manager ([installation guide](https://docs.astral.sh/uv/getting-started/installation/))
 - **Google Cloud Project** with BigQuery enabled
 - **Google Cloud credentials**
-
-## Authentication Options
-
-<details>
-<summary>Click to expand authentication details</summary>
-
-### 1. Application Default Credentials (Recommended)
-```bash
-gcloud auth application-default login
-```
-
-### 2. OAuth2 Authentication (ADK Agent only)
-```env
-# In .env file
-OAUTH_CLIENT_ID=your_client_id
-OAUTH_CLIENT_SECRET=your_client_secret
-```
-
-### 3. Service Account (ADK Agent only)
-1. Download service account key as `service_account_key.json`
-2. Update `CREDENTIALS_TYPE` in `credentials.py`
-
-</details>
-
-## Configuration
-
-### Write Modes (ADK Agent only)
-Control BigQuery write access in `credentials.py`:
-- **ALLOWED**: Full write capabilities
-- **BLOCKED**: Read-only mode (recommended for production)
-- **PROTECTED**: Temporary data writes only
 
 ## Deployment
 
@@ -232,7 +196,7 @@ cp .env.example .env
 export $(cat .env | grep -v '^#' | xargs)
 
 # Start the MCP server
-./mcp_toolbox_setup/toolbox --prebuilt bigquery
+./setup/mcp_toolbox/toolbox --prebuilt bigquery
 ```
 
 #### Option B: Deploy MCP Toolbox to Cloud Run
@@ -242,7 +206,7 @@ cp .env.example .env
 export $(cat .env | grep -v '^#' | xargs)
 
 # Setup and deploy
-cd mcp_toolbox_setup
+cd setup/mcp_toolbox
 chmod +x deploy.sh
 ./deploy.sh
 ```
