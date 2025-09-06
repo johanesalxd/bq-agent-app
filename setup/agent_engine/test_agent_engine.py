@@ -15,7 +15,7 @@ from vertexai import agent_engines
 def main():
     # Get the Agent Engine instance
     adk_app = agent_engines.get(
-        "projects/johanesa-playground-326616/locations/us-central1/reasoningEngines/6293573771064246272"
+        "projects/your-project-id/locations/us-central1/reasoningEngines/your-reasoning-engine-id"
     )
 
     print("=== Agent Engine Information ===")

@@ -13,3 +13,4 @@ build-backend = "uv_build"
 
 [tool.uv.build-backend]
 module-name = "bq_multi_agent_app"
+module-root = ""
