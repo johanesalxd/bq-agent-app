@@ -2,17 +2,9 @@
 name = "bq-multi-agent-app"
 version = "0.1.0"
 description = "BigQuery Multi-Agent Application with MCP and ADK"
-readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
     "google-adk>=1.5.0",
-    "google-cloud-aiplatform[adk,agent-engines]>=1.93.0",
-    "pandas>=2.3.0",
-    "numpy>=2.3.1",
-    "matplotlib>=3.8.0",
-    "seaborn>=0.13.0",
-    "python-dotenv>=1.0.1",
-    "absl-py>=2.2.2",
 ]
 
 [build-system]
@@ -21,4 +13,3 @@ build-backend = "uv_build"
 
 [tool.uv.build-backend]
 module-name = "bq_multi_agent_app"
-module-root = ""
