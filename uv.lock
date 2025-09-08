@@ -83,7 +83,7 @@ dependencies = [
 ]
 
 [package.metadata]
-requires-dist = [{ name = "google-adk", specifier = ">=1.5.0" }]
+requires-dist = [{ name = "google-adk", specifier = ">=1.13.0" }]
 
 [[package]]
 name = "cachetools"
