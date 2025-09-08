@@ -41,8 +41,10 @@ cd ../..
 cp .env.example .env
 export $(cat .env | grep -v '^#' | xargs)
 
-# Run the MCP server
-./setup/mcp_toolbox/toolbox --prebuilt bigquery
+# Run the MCP server with custom configuration
+cd setup/mcp_toolbox
+./toolbox --tools-file=tools.yaml --port=5000
+cd ../..
 
 # Run ADK
 uv run adk web
@@ -128,20 +130,33 @@ The system is built on:
 ### Multi-Agent System Architecture
 ```
 Root Agent (bigquery_ds_agent)
-├── BigQuery Tools (MCP Toolbox)
-│   ├── bigquery-list-dataset-ids
-│   ├── bigquery-get-dataset-info
-│   ├── bigquery-list-table-ids
-│   ├── bigquery-get-table-info
-│   ├── bigquery-execute-sql
-│   ├── bigquery-conversational-analytics
-│   ├── bigquery-forecast
-│   └── bigquery-sql
+├── Conversational Toolset (MCP Toolbox)
+│   └── bigquery-conversational-analytics    # Quick insights & answers
+├── Data Retrieval Toolset (MCP Toolbox)
+│   ├── bigquery-execute-sql                 # Raw data extraction
+│   ├── bigquery-forecast                    # Time series forecasting
+│   ├── bigquery-list-dataset-ids           # Dataset discovery
+│   ├── bigquery-get-dataset-info           # Dataset metadata
+│   ├── bigquery-list-table-ids             # Table discovery
+│   └── bigquery-get-table-info             # Table schema
 └── DS Sub-Agent (ds_agent)
     ├── Python Code Execution
     ├── Data Visualization
     └── Statistical Analysis
 ```
+
+#### Two-Path Workflow
+The agent intelligently chooses between two approaches:
+
+**PATH 1: Quick Insights (Conversational Analytics)**
+- For simple questions and quick answers
+- Uses `bigquery-conversational-analytics` directly
+- Returns natural language insights
+
+**PATH 2: In-Depth Analysis (Data Retrieval + Data Science)**
+- For complex analysis and visualizations
+- Uses `bigquery-execute-sql` → `call_data_science_agent`
+- Provides full control over data and analysis
 
 ## Project Structure
 
@@ -195,8 +210,9 @@ The MCP Toolbox provides BigQuery connectivity for the agent.
 cp .env.example .env
 export $(cat .env | grep -v '^#' | xargs)
 
-# Start the MCP server
-./setup/mcp_toolbox/toolbox --prebuilt bigquery
+# Start the MCP server with custom configuration
+cd setup/mcp_toolbox
+BIGQUERY_PROJECT=$BIGQUERY_PROJECT ./toolbox --tools-file=tools.yaml --port=5000
 ```
 
 #### Option B: Deploy MCP Toolbox to Cloud Run
