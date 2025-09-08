@@ -1,0 +1,45 @@
+sources:
+  bq_source:
+    kind: bigquery
+    project: ${BIGQUERY_PROJECT}
+
+tools:
+  bigquery-execute-sql:
+    kind: bigquery-execute-sql
+    source: bq_source
+    description: "Executes a SQL statement against BigQuery and returns the raw data."
+  bigquery-conversational-analytics:
+    kind: bigquery-conversational-analytics
+    source: bq_source
+    description: "Use this tool to perform data analysis, get insights, or answer complex questions about the contents of specific BigQuery tables."
+  bigquery-forecast:
+    kind: bigquery-forecast
+    source: bq_source
+    description: "Forecasts time series data in BigQuery."
+  bigquery-get-dataset-info:
+    kind: bigquery-get-dataset-info
+    source: bq_source
+    description: "Retrieves metadata for a BigQuery dataset."
+  bigquery-get-table-info:
+    kind: bigquery-get-table-info
+    source: bq_source
+    description: "Retrieves metadata for a BigQuery table."
+  bigquery-list-dataset-ids:
+    kind: bigquery-list-dataset-ids
+    source: bq_source
+    description: "Returns all dataset IDs from the source."
+  bigquery-list-table-ids:
+    kind: bigquery-list-table-ids
+    source: bq_source
+    description: "Returns table IDs in a given BigQuery dataset."
+
+toolsets:
+  conversational_toolset:
+    - bigquery-conversational-analytics
+  data_retrieval_toolset:
+    - bigquery-execute-sql
+    - bigquery-forecast
+    - bigquery-get-dataset-info
+    - bigquery-get-table-info
+    - bigquery-list-dataset-ids
+    - bigquery-list-table-ids

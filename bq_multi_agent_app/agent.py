@@ -10,8 +10,9 @@ from datetime import date
 from google.adk.agents import Agent
 
 from .prompts import return_instructions_root
-from .tools import bigquery_toolset
 from .tools import call_data_science_agent
+from .tools import conversational_toolset
+from .tools import data_retrieval_toolset
 
 date_today = date.today()
 
@@ -24,19 +25,15 @@ root_agent = Agent(
         Today's date: {date_today}
 
         Your capabilities:
-        1. Query BigQuery databases using MCP toolset
+        1. Query BigQuery databases using your available tools
         2. Perform data science analysis using call_data_science_agent
         3. Create visualizations and statistical analysis
-
-        Workflow:
-        1. Use BigQuery tools to retrieve data based on user questions
-        2. Use call_data_science_agent to analyze the retrieved data
-        3. Provide insights, visualizations, and conclusions
         """
     ),
     instruction=return_instructions_root(),
     tools=[
-        bigquery_toolset,           # BigQuery database operations via MCP
+        conversational_toolset,     # BigQuery conversational analytics
+        data_retrieval_toolset,     # BigQuery data retrieval and schema tools
         call_data_science_agent,    # Data science analysis with code execution
     ],
 )

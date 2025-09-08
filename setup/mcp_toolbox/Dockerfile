@@ -10,7 +10,7 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Download and install MCP toolbox
-RUN curl -O https://storage.googleapis.com/genai-toolbox/v0.13.0/linux/amd64/toolbox && \
+RUN curl -O https://storage.googleapis.com/genai-toolbox/v0.14.0/linux/amd64/toolbox && \
     chmod +x toolbox
 
 # Expose port (Cloud Run will set PORT environment variable)

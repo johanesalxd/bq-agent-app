@@ -8,7 +8,7 @@ set -e
 echo "Installing MCP Toolbox for BigQuery..."
 
 # Set the version (you can update this to the latest version)
-MCP_VERSION="v0.13.0"
+MCP_VERSION="v0.14.0"
 MCP_OS="linux"
 MCP_ARCH="amd64"
 

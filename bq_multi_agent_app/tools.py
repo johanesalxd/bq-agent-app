@@ -21,13 +21,21 @@ TOOLBOX_URL = os.getenv("TOOLBOX_URL", "http://127.0.0.1:5000")
 
 # BigQuery tools via MCP toolbox
 # Use McpToolset with StreamableHTTPConnectionParams for proper MCP integration
-bigquery_toolset = McpToolset(
+
+# Conversational toolset for quick insights and answers
+conversational_toolset = McpToolset(
     connection_params=StreamableHTTPConnectionParams(
         url=f"{TOOLBOX_URL}/mcp",  # MCP endpoint
         headers={}  # Add auth headers if needed
-    ),
-    # Optional: Filter specific tools if needed
-    # tool_filter=['bigquery-execute-sql', 'bigquery-list-tables', 'bigquery-describe-table']
+    )
+)
+
+# Data retrieval toolset for raw data extraction and analysis
+data_retrieval_toolset = McpToolset(
+    connection_params=StreamableHTTPConnectionParams(
+        url=f"{TOOLBOX_URL}/mcp",  # MCP endpoint
+        headers={}  # Add auth headers if needed
+    )
 )
 
 
