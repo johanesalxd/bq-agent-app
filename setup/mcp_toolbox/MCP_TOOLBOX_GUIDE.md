@@ -1,138 +1,113 @@
-# MCP Toolbox Cloud Run Deployment Guide
+# MCP Toolbox Deployment Guide
 
-This guide explains how to deploy the MCP (Model Context Protocol) BigQuery toolbox to Google Cloud Run for use with Vertex AI Agent Engine and local development.
+This guide explains how to deploy the MCP (Model Context Protocol) BigQuery toolbox for use with Vertex AI Agent Engine and local development. The toolbox provides BigQuery database operations through a standardized protocol that can be consumed by AI agents.
 
-## Overview
-
-The MCP toolbox provides BigQuery database operations through a standardized protocol that can be consumed by AI agents. This deployment creates a Cloud Run service that can be accessed from both local development environments and cloud-based AI agents.
+You can run the MCP Toolbox either locally or deploy it as a service on Google Cloud Run.
 
 ## Prerequisites
 
 - Google Cloud Project with billing enabled
 - Google Cloud CLI (`gcloud`) installed and authenticated
-- Docker installed (for local testing)
+- Docker installed
 - BigQuery API enabled in your project
-- Cloud Run API enabled in your project
+- Cloud Run API enabled in your project (for Cloud Run deployment)
 
-## Quick Start
+## Local Deployment
 
-1. **Setup ENV variables**
-   ```bash
-   source .env
-   export BIGQUERY_PROJECT=$BIGQUERY_PROJECT
-   ```
+Running the toolbox locally is ideal for development and testing.
 
-2. **Install the MCP toolbox locally:**
-   ```bash
-   cd setup/mcp_toolbox
-   chmod +x install-mcp-toolbox.sh
-   ./install-mcp-toolbox.sh
-   ```
+1.  **Install the MCP toolbox:**
+    If you haven't already, install the toolbox binary.
+    ```bash
+    cd setup/mcp_toolbox
+    chmod +x install-mcp-toolbox.sh
+    ./install-mcp-toolbox.sh
+    ```
 
-3. **Deploy to Cloud Run:**
-   ```bash
-   cd setup/mcp_toolbox
-   chmod +x deploy.sh
-   ./deploy.sh
-   ```
+2.  **Set Environment Variables:**
+    Ensure your `BIGQUERY_PROJECT` is set. The application will read it from your `.env` file.
+    ```bash
+    # Make sure you are in the root directory of the project
+    export $(cat ../../.env | grep -v '^#' | xargs)
+    ```
 
-4. **Update your application configuration:**
-   - Update the `TOOLBOX_URL` in your application's `.env` file to point to your deployed Cloud Run service
-   - Ensure your application loads environment variables using `python-dotenv`
+3.  **Run the Toolbox Server:**
+    Start the server, pointing it to your custom `tools.yaml` configuration.
+    ```bash
+    cd setup/mcp_toolbox
+    ./toolbox --tools-file=tools.yaml --port=5000
+    ```
+    The toolbox will now be running at `http://127.0.0.1:5000`.
 
-## File Structure
+## Cloud Run Deployment
 
-```
-setup/mcp_toolbox/
-├── MCP_TOOLBOX_GUIDE.md          # This guide
-├── install-mcp-toolbox.sh        # Local toolbox installation script
-├── Dockerfile                    # Container definition for Cloud Run
-├── deploy.sh                     # Automated deployment script
-└── .dockerignore                 # Docker build exclusions
-```
+Deploying to Cloud Run provides a scalable, managed service that can be accessed from both local environments and cloud-based AI agents.
 
-## Deployment Details
+### Quick Start
 
-### Container Configuration
+1.  **Set Environment Variables:**
+    The deployment script will load variables from the `.env` file in the root directory.
+    ```bash
+    # Make sure you are in the root directory of the project
+    export $(cat .env | grep -v '^#' | xargs)
+    ```
 
-The deployment uses a simplified single-process container that runs only the MCP toolbox:
+2.  **Deploy to Cloud Run:**
+    Run the automated deployment script.
+    ```bash
+    cd setup/mcp_toolbox
+    chmod +x deploy.sh
+    ./deploy.sh
+    ```
 
-- **Base Image:** `python:3.11-slim`
-- **Port:** 5000
-- **Command:** `./toolbox --prebuilt bigquery --address=0.0.0.0 --port=5000`
-- **Authentication:** `allow-authenticated` (requires Google Cloud authentication)
+3.  **Update Application Configuration:**
+    - After deployment, the script will output a **Service URL**.
+    - Update the `TOOLBOX_URL` in your project's `.env` file to point to this new URL.
 
-### Cloud Run Service
+### Deployment Details
 
-- **Service Name:** `mcp-toolbox-bq`
-- **Region:** `us-central1` (configurable)
-- **CPU:** 1 vCPU
-- **Memory:** 2Gi
-- **Concurrency:** 80 requests per instance
-- **Min Instances:** 0 (scales to zero when not in use)
-- **Max Instances:** 10
+#### Container Configuration
 
-### IAM and Permissions
+The deployment uses a Docker container to run the MCP toolbox.
 
-The deployment script automatically:
+-   **Base Image:** `python:3.11-slim`
+-   **Port:** The container exposes port `8080`, which is the default for Cloud Run.
+-   **Command:** The `Dockerfile` uses the following command to start the server, which correctly uses the `tools.yaml` configuration file:
+    ```
+    CMD ["sh", "-c", "./toolbox --tools-file=tools.yaml --address=0.0.0.0 --port=${PORT:-8080}"]
+    ```
 
-1. Creates a service account: `mcp-toolbox-identity@{PROJECT_ID}.iam.gserviceaccount.com`
-2. Grants BigQuery permissions:
-   - `roles/bigquery.dataViewer`
-   - `roles/bigquery.jobUser`
-3. Assigns the service account to the Cloud Run service
+#### Cloud Run Service
 
-## Troubleshooting
+-   **Service Name:** `mcp-toolbox-bq`
+-   **Region:** `us-central1` (configurable in `deploy.sh`)
+-   **Authentication:** The service is deployed with `--allow-unauthenticated`, but your tools can be configured to require authentication.
 
-### Logs and Monitoring
+#### IAM and Permissions
+
+The `deploy.sh` script automatically handles the necessary permissions:
+
+1.  **Creates a service account:** `mcp-toolbox-identity@{PROJECT_ID}.iam.gserviceaccount.com`
+2.  **Grants BigQuery permissions:** `roles/bigquery.user`, `roles/bigquery.dataViewer`, and `roles/bigquery.jobUser`.
+3.  **Assigns the service account** to the Cloud Run service.
+
+### Troubleshooting
+
+You can view logs for your deployed service to diagnose any issues.
 
 ```bash
 # View Cloud Run logs
-gcloud logs read --service=mcp-toolbox-bq --region=us-central1
+gcloud logs read --service=mcp-toolbox-bq --region=$REGION --project=$PROJECT_ID
 
 # Stream real-time logs
-gcloud logs tail --service=mcp-toolbox-bq --region=us-central1
+gcloud logs tail --service=mcp-toolbox-bq --region=$REGION --project=$PROJECT_ID
 ```
 
-## Security Considerations
+### Security Considerations
 
-- The service uses `allow-authenticated` which requires valid Google Cloud authentication
-- Service account has minimal BigQuery permissions (read-only data access and job execution)
-- No public internet access - requires authentication for all requests
-- Container runs as non-root user for security
-
-## Cost Optimization
-
-- Service scales to zero when not in use (no cost during idle periods)
-- CPU and memory are right-sized for typical BigQuery operations
-- Consider setting up budget alerts for monitoring costs
-
-## Advanced Configuration
-
-### Custom Regions
-
-To deploy to a different region, modify the `deploy.sh` script:
-
-```bash
-REGION="europe-west1"  # Change this line
-```
-
-### Resource Limits
-
-To adjust CPU/memory, modify the deployment command in `deploy.sh`:
-
-```bash
---cpu=2 \
---memory=4Gi \
-```
-
-### Custom Service Account
-
-To use an existing service account, modify the `deploy.sh` script to skip service account creation and use your existing one.
-
-## Integration with Vertex AI Agent Engine
-
-Once deployed, the Cloud Run service URL can be used in Vertex AI Agent Engine configurations to provide BigQuery capabilities to your AI agents. The service will automatically handle authentication and provide secure access to your BigQuery data.
+- The service account is granted minimal necessary permissions for BigQuery operations.
+- Review the `tools.yaml` file to understand what operations are exposed.
+- For production, consider restricting access further by removing `--allow-unauthenticated` and implementing stricter IAM policies.
 
 ## Support
 

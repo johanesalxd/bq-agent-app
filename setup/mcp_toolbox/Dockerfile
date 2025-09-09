@@ -24,4 +24,4 @@ ENV BIGQUERY_PROJECT=""
 ENV PORT=8080
 
 # Start toolbox with custom configuration using PORT environment variable
-CMD sh -c "./toolbox --tools-file=tools.yaml --address=0.0.0.0 --port=${PORT:-8080}"
+CMD ["sh", "-c", "./toolbox --tools-file=tools.yaml --address=0.0.0.0 --port=${PORT:-8080}"]
