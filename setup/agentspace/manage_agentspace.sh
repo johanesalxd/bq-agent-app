@@ -190,40 +190,6 @@ deploy_agent() {
     fi
 }
 
-# Function to replace existing agent (delete old, deploy new)
-replace_agent() {
-    log_info "Starting agent replacement process..."
-
-    # Find existing agent
-    local existing_agent=$(find_agent_by_display_name "$AGENT_DISPLAY_NAME")
-
-    if [[ -n "$existing_agent" ]]; then
-        log_info "Found existing agent: $existing_agent"
-
-        # Delete existing agent
-        if delete_agent "$existing_agent"; then
-            log_success "Existing agent deleted"
-
-            # Wait a moment for the deletion to propagate
-            log_info "Waiting 5 seconds for deletion to propagate..."
-            sleep 5
-        else
-            log_error "Failed to delete existing agent"
-            return 1
-        fi
-    else
-        log_info "No existing agent found with display name '$AGENT_DISPLAY_NAME'"
-    fi
-
-    # Deploy new agent
-    if deploy_agent; then
-        log_success "Agent replacement completed successfully!"
-        return 0
-    else
-        log_error "Failed to deploy new agent"
-        return 1
-    fi
-}
 
 # Function to list ReasoningEngine sessions
 list_reasoning_engine_sessions() {
@@ -388,13 +354,12 @@ delete_reasoning_engine() {
 
 # Function to show usage
 show_usage() {
-    echo "Usage: $0 [COMMAND] [OPTIONS]"
+    echo "Usage: $0 <COMMAND> [OPTIONS]"
     echo ""
     echo "Commands:"
     echo "  list                    - List all agents in the AgentSpace"
     echo "  deploy                  - Deploy a new agent to AgentSpace"
     echo "  delete                  - Delete agent by display name"
-    echo "  replace                 - Replace existing agent (delete + deploy)"
     echo "  delete-reasoning-engine - Delete ReasoningEngine and its sessions"
     echo "  list-sessions          - List all ReasoningEngine sessions"
     echo "  delete-sessions        - Delete all ReasoningEngine sessions"
@@ -408,7 +373,6 @@ show_usage() {
     echo "  $0 list"
     echo "  $0 deploy"
     echo "  $0 delete"
-    echo "  $0 replace"
     echo "  $0 delete-reasoning-engine"
     echo "  $0 delete-reasoning-engine --force"
     echo "  $0 delete-reasoning-engine --dry-run"
@@ -418,9 +382,16 @@ show_usage() {
 
 # Main execution
 main() {
-    local command="${1:-replace}"
+    local command="$1"
     local force_flag="false"
     local dry_run="false"
+
+    # Check if command is provided
+    if [[ -z "$command" ]]; then
+        log_error "No command provided"
+        show_usage
+        exit 1
+    fi
 
     # Parse options for delete-reasoning-engine command
     if [[ "$command" == "delete-reasoning-engine" ]]; then
@@ -461,10 +432,6 @@ main() {
             else
                 log_warning "No agent found with display name '$AGENT_DISPLAY_NAME'"
             fi
-            ;;
-        "replace")
-            check_config
-            replace_agent
             ;;
         "delete-reasoning-engine")
             check_config

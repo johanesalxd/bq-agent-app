@@ -36,7 +36,6 @@ chmod +x manage_agentspace.sh
 ./manage_agentspace.sh list           # List all agents
 ./manage_agentspace.sh deploy         # Deploy new agent
 ./manage_agentspace.sh delete         # Delete agent by display name
-./manage_agentspace.sh replace        # Replace existing agent (default)
 
 # ReasoningEngine operations
 ./manage_agentspace.sh delete-reasoning-engine           # Delete with sessions cleanup
@@ -52,7 +51,6 @@ chmod +x manage_agentspace.sh
 - **List agents**: View all agents in your AgentSpace
 - **Deploy agent**: Create a new agent with your ReasoningEngine
 - **Delete agent**: Remove an agent by display name
-- **Replace agent**: Delete existing and deploy new (recommended for updates)
 
 ### ReasoningEngine Management
 - **Session management**: List and delete ReasoningEngine sessions
@@ -79,11 +77,6 @@ Two approaches are available:
   - Agent Engine operations
 
 ## Examples
-
-### Replace an existing agent
-```bash
-./manage_agentspace.sh replace
-```
 
 ### Fix ReasoningEngine deletion error
 ```bash

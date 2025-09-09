@@ -325,7 +325,8 @@ chmod +x manage_agentspace.sh
 
 # Common operations
 ./manage_agentspace.sh list                    # List all agents
-./manage_agentspace.sh replace                 # Replace existing agent (recommended)
+./manage_agentspace.sh deploy                  # Deploy new agent
+./manage_agentspace.sh delete                  # Delete existing agent
 ./manage_agentspace.sh delete-reasoning-engine # Fix deletion errors
 ./manage_agentspace.sh help                    # Show all commands
 ```
