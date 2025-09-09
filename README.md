@@ -52,6 +52,7 @@ uv run adk web
 
 ## Additional Guides
 
+- [Agentspace Management Guide](setup/agentspace/AGENTSPACE_MANAGEMENT_GUIDE.md) - Comprehensive guide for managing Google Cloud Agentspace agents and ReasoningEngines
 - [Vertex Extensions Setup Guide](setup/vertex_extensions/VERTEX_EXTENSIONS_GUIDE.md) - Complete guide for setting up Vertex AI Extensions for code interpretation
 - [MCP Toolbox Deployment Guide](setup/mcp_toolbox/MCP_TOOLBOX_GUIDE.md) - Deploy MCP toolbox to Google Cloud Run for production use
 
@@ -183,9 +184,10 @@ bq-agent-app/
 │   │   ├── cleanup_vertex_extensions.py # Clean up extensions
 │   │   ├── utils.py                 # Shared utilities
 │   │   └── VERTEX_EXTENSIONS_GUIDE.md   # Setup guide
-│   └── agent_engine/                # Agent Engine deployment
-│       ├── expose_to_agentspace.sh  # AgentSpace deployment
-│       └── test_agent_engine.py     # Testing utilities
+│   └── agentspace/                  # Agentspace Management
+│       ├── manage_agentspace.sh     # Agentspace and ReasoningEngine management
+│       ├── test_agent_engine.py     # Testing utilities
+│       └── AGENTSPACE_MANAGEMENT_GUIDE.md  # Comprehensive guide
 └── README.md
 ```
 
@@ -250,7 +252,6 @@ uv run adk web  # or uv run adk run
 #### Option B: Deploy Agent to Cloud Run
 ```bash
 # Set environment variables
-cp .env.example bq_multi_agent_app/.env
 export $(cat .env | grep -v '^#' | xargs)
 
 uv run adk deploy cloud_run \
@@ -270,7 +271,6 @@ After deployment:
 #### Option C: Deploy Agent to Agent Engine
 ```bash
 # Set environment variables
-cp .env.example bq_multi_agent_app/.env
 export $(cat .env | grep -v '^#' | xargs)
 
 uv run adk deploy agent_engine \
@@ -279,6 +279,7 @@ uv run adk deploy agent_engine \
   --staging_bucket="gs://your-project-id-adk-staging" \
   --display_name="BigQuery Multi-Agent App" \
   --trace_to_cloud \
+  --env_file=.env \
   ./bq_multi_agent_app
 ```
 
@@ -298,6 +299,52 @@ After deployment:
 | Cloud Run | Agent Engine | Enterprise deployment with managed sessions |
 
 **Note**: Ensure your service account has the necessary BigQuery permissions for your project. For advanced MCP configurations, refer to the [official documentation](https://googleapis.github.io/genai-toolbox/how-to/deploy_toolbox/).
+
+## Agentspace Management
+
+Once your agent is deployed to Agent Engine, you can manage it through Google Cloud Agentspace. The project includes comprehensive tools for Agentspace operations:
+
+### Features
+- **Agent Management**: List, deploy, delete, and replace agents in Agentspace
+- **ReasoningEngine Operations**: Manage ReasoningEngine sessions and handle deletion errors
+- **Error Resolution**: Automatically handle the common "child resources" deletion error
+- **Dry Run Mode**: Preview operations before execution
+
+### Quick Usage
+```bash
+cd setup/agentspace
+
+# Make script executable
+chmod +x manage_agentspace.sh
+
+# Configure your project details in the script
+# Edit manage_agentspace.sh and update:
+# - PROJECT_ID, PROJECT_NUMBER
+# - REASONING_ENGINE_ID, AS_APP
+# - AGENT_DISPLAY_NAME
+
+# Common operations
+./manage_agentspace.sh list                    # List all agents
+./manage_agentspace.sh replace                 # Replace existing agent (recommended)
+./manage_agentspace.sh delete-reasoning-engine # Fix deletion errors
+./manage_agentspace.sh help                    # Show all commands
+```
+
+### Solving ReasoningEngine Deletion Errors
+If you encounter the error: *"The ReasoningEngine contains child resources: sessions"*, use:
+
+```bash
+# Preview what would be deleted
+./manage_agentspace.sh delete-reasoning-engine --dry-run
+
+# Delete sessions first, then ReasoningEngine (recommended)
+./manage_agentspace.sh delete-reasoning-engine
+
+# Or force delete everything at once
+./manage_agentspace.sh delete-reasoning-engine --force
+```
+
+For detailed instructions, see the [Agentspace Management Guide](setup/agentspace/AGENTSPACE_MANAGEMENT_GUIDE.md).
 
 ## Security Considerations
 
