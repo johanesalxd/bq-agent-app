@@ -32,6 +32,7 @@ gcloud services enable run.googleapis.com \
                        cloudbuild.googleapis.com \
                        artifactregistry.googleapis.com \
                        iam.googleapis.com \
+                       cloudaicompanion.googleapis.com \
                        --project=$PROJECT_ID
 
 # Create service account if needed
@@ -55,6 +56,20 @@ gcloud projects add-iam-policy-binding $PROJECT_ID \
 gcloud projects add-iam-policy-binding $PROJECT_ID \
     --member serviceAccount:${SERVICE_ACCOUNT}@${PROJECT_ID}.iam.gserviceaccount.com \
     --role roles/bigquery.jobUser
+
+# Grant Gemini Data Analytics permissions
+echo "Granting Gemini Data Analytics permissions..."
+gcloud projects add-iam-policy-binding $PROJECT_ID \
+    --member serviceAccount:${SERVICE_ACCOUNT}@${PROJECT_ID}.iam.gserviceaccount.com \
+    --role roles/cloudaicompanion.user
+
+gcloud projects add-iam-policy-binding $PROJECT_ID \
+    --member serviceAccount:${SERVICE_ACCOUNT}@${PROJECT_ID}.iam.gserviceaccount.com \
+    --role roles/aiplatform.user
+
+gcloud projects add-iam-policy-binding $PROJECT_ID \
+    --member serviceAccount:${SERVICE_ACCOUNT}@${PROJECT_ID}.iam.gserviceaccount.com \
+    --role roles/ml.developer
 
 # Create Artifact Registry repository if needed
 echo "Setting up Artifact Registry repository..."
