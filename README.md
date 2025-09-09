@@ -252,6 +252,7 @@ uv run adk web  # or uv run adk run
 #### Option B: Deploy Agent to Cloud Run
 ```bash
 # Set environment variables
+cp .env.example bq_multi_agent_app/.env
 export $(cat .env | grep -v '^#' | xargs)
 
 uv run adk deploy cloud_run \
