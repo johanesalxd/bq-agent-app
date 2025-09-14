@@ -12,6 +12,10 @@ tools:
     kind: bigquery-conversational-analytics
     source: bq_source
     description: "Use this tool to perform data analysis, get insights, or answer complex questions about the contents of specific BigQuery tables."
+  bigquery-analyze-contribution:
+    kind: bigquery-analyze-contribution
+    source: bq_source
+    description: "Performs contribution analysis in BigQuery."
   bigquery-forecast:
     kind: bigquery-forecast
     source: bq_source
@@ -38,8 +42,10 @@ toolsets:
     - bigquery-conversational-analytics
   data_retrieval_toolset:
     - bigquery-execute-sql
-    - bigquery-forecast
     - bigquery-get-dataset-info
     - bigquery-get-table-info
     - bigquery-list-dataset-ids
     - bigquery-list-table-ids
+  ml_analysis_toolset:
+    - bigquery-forecast
+    - bigquery-analyze-contribution

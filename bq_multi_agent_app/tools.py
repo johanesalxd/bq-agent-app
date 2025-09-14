@@ -38,6 +38,14 @@ data_retrieval_toolset = McpToolset(
     )
 )
 
+# ML analysis toolset for forecasting and contribution analysis
+ml_analysis_toolset = McpToolset(
+    connection_params=StreamableHTTPConnectionParams(
+        url=f"{TOOLBOX_URL}/mcp",  # MCP endpoint
+        headers={}  # Add auth headers if needed
+    )
+)
+
 
 async def call_data_science_agent(
     question: str,
