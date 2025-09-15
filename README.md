@@ -227,6 +227,9 @@ export $(cat .env | grep -v '^#' | xargs)
 cd setup/mcp_toolbox
 chmod +x deploy.sh
 ./deploy.sh
+
+# To deploy using a local `toolbox` binary instead of the release version, run:
+# ./deploy.sh local
 ```
 
 The script will:

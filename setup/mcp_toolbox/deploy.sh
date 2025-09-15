@@ -85,9 +85,18 @@ fi
 echo "Configuring Docker authentication..."
 gcloud auth configure-docker ${REGION}-docker.pkg.dev --quiet
 
+# Determine which Dockerfile to use
+DOCKERFILE="Dockerfile"
+if [ "$1" == "local" ]; then
+    echo "Using local build from Dockerfile.local"
+    DOCKERFILE="Dockerfile.local"
+else
+    echo "Using release build from Dockerfile"
+fi
+
 # Build and push Docker image
 echo "Building Docker image for linux/amd64 platform..."
-docker build --platform linux/amd64 -t $IMAGE_NAME .
+docker build --platform linux/amd64 -f $DOCKERFILE -t $IMAGE_NAME .
 
 echo "Pushing to Artifact Registry..."
 docker push $IMAGE_NAME

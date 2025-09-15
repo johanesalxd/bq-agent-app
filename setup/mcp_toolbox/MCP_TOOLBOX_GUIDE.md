@@ -43,6 +43,25 @@ Running the toolbox locally is ideal for development and testing.
 
 Deploying to Cloud Run provides a scalable, managed service that can be accessed from both local environments and cloud-based AI agents.
 
+### Deploying with a Local Binary (for Development)
+
+If you are developing the `toolbox` binary locally, you can deploy it directly to Cloud Run without relying on the public release version. This is useful for testing custom changes before they are officially released.
+
+1.  **Place your binary:** Ensure your compiled `toolbox` binary is located in the `setup/mcp_toolbox/` directory.
+
+2.  **Run the deployment script with the `local` flag:**
+    ```bash
+    cd setup/mcp_toolbox
+    chmod +x deploy.sh
+    ./deploy.sh local
+    ```
+
+#### How It Works
+
+-   Passing the `local` argument tells the `deploy.sh` script to use `Dockerfile.local` instead of the default `Dockerfile`.
+-   `Dockerfile.local` is configured to `COPY` the `toolbox` binary from the local directory into the Docker image, rather than downloading it.
+-   The rest of the deployment process (IAM, service configuration, etc.) remains the same.
+
 ### Quick Start
 
 1.  **Set Environment Variables:**

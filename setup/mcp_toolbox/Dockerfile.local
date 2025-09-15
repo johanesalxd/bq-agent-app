@@ -1,0 +1,22 @@
+# Use Python 3.11 slim image
+FROM python:3.11-slim
+
+# Set working directory
+WORKDIR /app
+
+# Copy the local toolbox binary and make it executable
+COPY toolbox .
+RUN chmod +x ./toolbox
+
+# Copy the custom tools configuration
+COPY tools.yaml .
+
+# Expose port (Cloud Run will set PORT environment variable)
+EXPOSE 8080
+
+# Set environment variables (will be overridden by Cloud Run deployment)
+ENV BIGQUERY_PROJECT=""
+ENV PORT=8080
+
+# Start toolbox with custom configuration using PORT environment variable
+CMD ["sh", "-c", "./toolbox --tools-file=tools.yaml --address=0.0.0.0 --port=${PORT:-8080}"]
