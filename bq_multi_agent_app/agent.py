@@ -29,9 +29,9 @@ root_agent = Agent(
         Your capabilities:
         1. Query BigQuery databases using your available tools.
         2. Perform data science analysis using call_data_science_agent.
-        3. Create and manage BigQuery ML models using call_bqml_agent.
-        4. Create visualizations and statistical analysis.
-        5. Perform advanced analysis such as forecasting and contribution analysis.
+        3. Perform ML analysis using ml_analysis_toolset (TimesFM forecasting, contribution analysis).
+        4. Create and manage BigQuery ML models using call_bqml_agent.
+        5. Create visualizations and statistical analysis.
         """
     ),
     instruction=return_instructions_root(),

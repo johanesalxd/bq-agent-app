@@ -29,14 +29,13 @@ def return_instructions_bqml() -> str:
                 d.  Populate the BQML code with the correct `dataset_id` and `project_id` from the session context.
                 e.  If the user approves, execute the BQML code using the `bqml_toolset` (bigquery-execute-sql). If the user requests changes, revise the code and repeat steps b-d.
                 f. **Inform the user:** Before executing the BQML code, inform the user that some BQML operations, especially model training, can take a significant amount of time to complete, potentially several minutes or even hours.
-            4.  **Data Exploration:** If the user asks for data exploration or analysis, use the `call_db_agent` tool to execute SQL queries against BigQuery.
+            4.  **Data Exploration:** If the user asks for data exploration or analysis, use the `bqml_toolset` (bigquery-execute-sql) to execute SQL queries against BigQuery.
 
             **Tool Usage:**
 
             *   `rag_response`: Use this tool to get information from the BQML Reference Guide. Formulate your query carefully to get the most relevant results.
             *   `check_bq_models`: Use this tool to list existing BQML models in the specified dataset.
-            *   `bqml_toolset` (bigquery-execute-sql): Use this tool to run BQML code. **Only use this tool AFTER the user has approved the code.**
-            *   `call_db_agent`: Use this tool to execute SQL queries for data exploration and analysis.
+            *   `bqml_toolset` (bigquery-execute-sql): Use this tool to run BQML code and SQL queries. **Only use this tool AFTER the user has approved the code for BQML operations.**
 
             **IMPORTANT:**
 

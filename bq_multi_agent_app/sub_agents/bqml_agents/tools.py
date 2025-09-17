@@ -4,12 +4,11 @@ Tools for BQML Agent
 This module provides BQML-specific tools including:
 1. check_bq_models: List BigQuery ML models in a dataset
 2. rag_response: Query BQML documentation from RAG corpus
-3. call_db_agent: Execute SQL queries via MCP toolset
+3. bqml_toolset: MCP toolset for executing SQL/BQML statements
 """
 
 import os
 
-from google.adk.tools import ToolContext
 from google.adk.tools.mcp_tool.mcp_session_manager import \
     StreamableHTTPConnectionParams
 from google.adk.tools.mcp_tool.mcp_toolset import McpToolset
@@ -90,32 +89,3 @@ bqml_toolset = McpToolset(
         headers={}  # Add auth headers if needed
     )
 )
-
-
-async def call_db_agent(
-    question: str,
-    tool_context: ToolContext,
-) -> str:
-    """
-    Execute SQL queries for data exploration and analysis.
-
-    This function uses the BQML toolset to execute SQL queries against BigQuery.
-
-    Args:
-        question: The SQL query or question to execute
-        tool_context: Context for sharing state between tools
-
-    Returns:
-        Query result or error message
-    """
-    try:
-        # The BQML toolset will be used directly by the agent
-        # This function serves as a placeholder for SQL execution
-        # The actual execution will be handled by the MCP toolset in the agent
-        tool_context.state["sql_query"] = question
-        return f"SQL query prepared for execution: {question}"
-
-    except Exception as e:
-        error_message = f"Error preparing SQL query: {str(e)}"
-        tool_context.state["db_query_error"] = error_message
-        return error_message

@@ -13,7 +13,6 @@ from google.adk.agents import Agent
 
 from .prompts import return_instructions_bqml
 from .tools import bqml_toolset
-from .tools import call_db_agent
 from .tools import check_bq_models
 from .tools import rag_response
 
@@ -25,6 +24,5 @@ bqml_agent = Agent(
         bqml_toolset,      # MCP toolset for BigQuery SQL/BQML execution
         check_bq_models,   # List existing BQML models
         rag_response,      # Query BQML documentation
-        call_db_agent,     # SQL execution for data exploration
     ],
 )

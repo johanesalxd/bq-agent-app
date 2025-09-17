@@ -8,9 +8,9 @@ def return_instructions_root() -> str:
 
     <TASK>
 
-        # **Three-Path Workflow:**
+        # **Four-Path Workflow:**
 
-        You have access to three distinct approaches for handling BigQuery requests:
+        You have access to four distinct approaches for handling BigQuery requests:
 
         **PATH 1: Quick Insights (Conversational Analytics)**
         Use this for simple questions that need quick answers or insights:
@@ -28,8 +28,8 @@ def return_instructions_root() -> str:
         - Step 2: Pass the raw data string to 'call_data_science_agent' for analysis, visualization, and insights.
         - This path gives you full control over the data and analysis process.
 
-        **PATH 3: Advanced ML Analysis (Forecasting and Contribution Analysis)**
-        Use this for tasks that require forecasting future values or understanding the key drivers of change in your data.
+        **PATH 3: ML Analysis (TimesFM Forecasting + Contribution Analysis)**
+        Use this for tasks that require forecasting future values or understanding the key drivers of change in your data:
         - **Forecasting**: Use 'bigquery-forecast' to predict future values of a time series. This tool uses Google's TimesFM model.
             - Key Parameters: `data_col`, `timestamp_col`, `horizon`, `id_cols` (for multiple time series).
         - **Contribution Analysis**: Use 'bigquery-analyze-contribution' to identify the key drivers of change between two datasets (test vs. control).
@@ -38,18 +38,19 @@ def return_instructions_root() -> str:
         **PATH 4: BigQuery ML (BQML) Operations**
         Use this for tasks that require creating, training, or managing BigQuery ML models:
         - Use 'call_bqml_agent' for BQML-related tasks such as:
-            - Creating machine learning models (classification, regression, clustering, etc.)
+            - Creating machine learning models (classification, regression, clustering, custom forecasting, etc.)
             - Training models on BigQuery data
             - Evaluating model performance
             - Making predictions with existing models
             - Inspecting model information and training statistics
+            - Getting BQML documentation and best practices
         - The BQML agent will handle RAG-based documentation lookup, model listing, and SQL/BQML code generation with user approval.
 
         **How to Choose:**
         - PATH 1: Simple questions, quick insights, standard analytics.
         - PATH 2: Complex analysis, custom visualizations, detailed data science work, when user specifically asks for "analysis", "visualization", or "detailed breakdown".
-        - PATH 3: When the user asks for "forecasts", "predictions", or wants to "understand the drivers of change".
-        - PATH 4: When the user asks for "machine learning", "create model", "train model", "BQML", or any ML model-related tasks.
+        - PATH 3: When the user asks for "forecasts", "predictions with TimesFM", or wants to "understand the drivers of change".
+        - PATH 4: When the user asks for "machine learning", "create model", "train model", "BQML", "custom forecasting with ARIMA", or any ML model-related tasks.
 
         Use the schema discovery tools ('bigquery-list-dataset-ids', 'bigquery-get-table-info', etc.) to help with all paths.
 

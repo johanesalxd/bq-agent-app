@@ -239,19 +239,25 @@ Root Agent (bigquery_ds_agent)
 │   └── bigquery-conversational-analytics    # Quick insights & answers
 ├── Data Retrieval Toolset (MCP Toolbox)
 │   ├── bigquery-execute-sql                 # Raw data extraction
-│   ├── bigquery-forecast                    # Time series forecasting
 │   ├── bigquery-list-dataset-ids           # Dataset discovery
 │   ├── bigquery-get-dataset-info           # Dataset metadata
 │   ├── bigquery-list-table-ids             # Table discovery
 │   └── bigquery-get-table-info             # Table schema
-└── DS Sub-Agent (ds_agent)
-    ├── Python Code Execution
-    ├── Data Visualization
-    └── Statistical Analysis
+├── ML Analysis Toolset (MCP Toolbox)
+│   ├── bigquery-forecast                    # TimesFM forecasting
+│   └── bigquery-analyze-contribution        # Contribution analysis
+├── DS Sub-Agent (ds_agent)
+│   ├── Python Code Execution
+│   ├── Data Visualization
+│   └── Statistical Analysis
+└── BQML Sub-Agent (bqml_agent)
+    ├── BQML Toolset (MCP)                   # SQL/BQML execution
+    ├── RAG Response                         # BQML documentation queries
+    └── Model Listing                        # BigQuery ML model discovery
 ```
 
-#### Two-Path Workflow
-The agent intelligently chooses between two approaches:
+#### Four-Path Workflow
+The agent intelligently chooses between four approaches:
 
 **PATH 1: Quick Insights (Conversational Analytics)**
 - For simple questions and quick answers
@@ -263,6 +269,16 @@ The agent intelligently chooses between two approaches:
 - Uses `bigquery-execute-sql` → `call_data_science_agent`
 - Provides full control over data and analysis
 
+**PATH 3: ML Analysis (TimesFM + Contribution Analysis)**
+- For forecasting and understanding drivers of change
+- Uses `bigquery-forecast` (TimesFM model) and `bigquery-analyze-contribution`
+- Quick ML insights without custom model training
+
+**PATH 4: BQML Operations (BigQuery ML)**
+- For custom machine learning model operations
+- Uses `call_bqml_agent` → BQML toolset + RAG corpus
+- Handles model creation, training, evaluation, and documentation
+
 ## Project Structure
 
 ```
@@ -271,18 +287,25 @@ bq-agent-app/
 ├── uv.lock                          # Dependency lock file
 ├── bq_multi_agent_app/              # Multi-Agent System
 │   ├── agent.py                     # Root agent with MCP integration
-│   ├── tools.py                     # MCP BigQuery tools + DS agent wrapper
-│   ├── prompts.py                   # Agent instructions
+│   ├── tools.py                     # MCP BigQuery tools + agent wrappers
+│   ├── prompts.py                   # Root agent instructions
 │   └── sub_agents/
-│       └── ds_agents/
-│           ├── agent.py             # Data science agent
-│           └── prompts.py           # DS agent instructions
+│       ├── ds_agents/               # Data Science Agent
+│       │   ├── agent.py             # Data science agent
+│       │   └── prompts.py           # DS agent instructions
+│       └── bqml_agents/             # BigQuery ML Agent
+│           ├── agent.py             # BQML agent with RAG integration
+│           ├── prompts.py           # BQML agent instructions
+│           └── tools.py             # BQML-specific tools (RAG, model listing)
 ├── setup/                           # Setup and deployment tools
 │   ├── mcp_toolbox/                 # MCP Toolbox setup
 │   │   ├── install-mcp-toolbox.sh   # Local installation script
 │   │   ├── deploy.sh                # Cloud Run deployment
 │   │   ├── Dockerfile               # Container definition
 │   │   └── MCP_TOOLBOX_GUIDE.md     # Deployment guide
+│   ├── rag_corpus/                  # BQML RAG Corpus Setup
+│   │   ├── create_bqml_corpus.py    # RAG corpus creation script
+│   │   └── test_rag.py              # RAG corpus testing script
 │   ├── vertex_extensions/           # Vertex AI Extensions Management
 │   │   ├── setup_vertex_extensions.py   # Create extensions
 │   │   ├── cleanup_vertex_extensions.py # Clean up extensions
