@@ -25,7 +25,8 @@ TOOLBOX_URL = os.getenv("TOOLBOX_URL", "http://127.0.0.1:5000")
 # Conversational toolset for quick insights and answers
 conversational_toolset = McpToolset(
     connection_params=StreamableHTTPConnectionParams(
-        url=f"{TOOLBOX_URL}/mcp",  # MCP endpoint
+        # MCP endpoint with toolset filter
+        url=f"{TOOLBOX_URL}/mcp/conversational_toolset",
         headers={}  # Add auth headers if needed
     )
 )
@@ -33,7 +34,8 @@ conversational_toolset = McpToolset(
 # Data retrieval toolset for raw data extraction and analysis
 data_retrieval_toolset = McpToolset(
     connection_params=StreamableHTTPConnectionParams(
-        url=f"{TOOLBOX_URL}/mcp",  # MCP endpoint
+        # MCP endpoint with toolset filter
+        url=f"{TOOLBOX_URL}/mcp/data_retrieval_toolset",
         headers={}  # Add auth headers if needed
     )
 )
@@ -41,7 +43,8 @@ data_retrieval_toolset = McpToolset(
 # ML analysis toolset for forecasting and contribution analysis
 ml_analysis_toolset = McpToolset(
     connection_params=StreamableHTTPConnectionParams(
-        url=f"{TOOLBOX_URL}/mcp",  # MCP endpoint
+        # MCP endpoint with toolset filter
+        url=f"{TOOLBOX_URL}/mcp/ml_analysis_toolset",
         headers={}  # Add auth headers if needed
     )
 )
