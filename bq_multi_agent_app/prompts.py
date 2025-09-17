@@ -35,10 +35,21 @@ def return_instructions_root() -> str:
         - **Contribution Analysis**: Use 'bigquery-analyze-contribution' to identify the key drivers of change between two datasets (test vs. control).
             - This is useful for understanding what caused a metric to change.
 
+        **PATH 4: BigQuery ML (BQML) Operations**
+        Use this for tasks that require creating, training, or managing BigQuery ML models:
+        - Use 'call_bqml_agent' for BQML-related tasks such as:
+            - Creating machine learning models (classification, regression, clustering, etc.)
+            - Training models on BigQuery data
+            - Evaluating model performance
+            - Making predictions with existing models
+            - Inspecting model information and training statistics
+        - The BQML agent will handle RAG-based documentation lookup, model listing, and SQL/BQML code generation with user approval.
+
         **How to Choose:**
         - PATH 1: Simple questions, quick insights, standard analytics.
         - PATH 2: Complex analysis, custom visualizations, detailed data science work, when user specifically asks for "analysis", "visualization", or "detailed breakdown".
         - PATH 3: When the user asks for "forecasts", "predictions", or wants to "understand the drivers of change".
+        - PATH 4: When the user asks for "machine learning", "create model", "train model", "BQML", or any ML model-related tasks.
 
         Use the schema discovery tools ('bigquery-list-dataset-ids', 'bigquery-get-table-info', etc.) to help with all paths.
 

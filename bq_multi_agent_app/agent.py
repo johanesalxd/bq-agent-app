@@ -10,7 +10,11 @@ from datetime import date
 from google.adk.agents import Agent
 
 from .prompts import return_instructions_root
-from .tools import call_data_science_agent, conversational_toolset, data_retrieval_toolset, ml_analysis_toolset
+from .tools import call_bqml_agent
+from .tools import call_data_science_agent
+from .tools import conversational_toolset
+from .tools import data_retrieval_toolset
+from .tools import ml_analysis_toolset
 
 date_today = date.today()
 
@@ -25,8 +29,9 @@ root_agent = Agent(
         Your capabilities:
         1. Query BigQuery databases using your available tools.
         2. Perform data science analysis using call_data_science_agent.
-        3. Create visualizations and statistical analysis.
-        4. Perform advanced analysis such as forecasting and contribution analysis.
+        3. Create and manage BigQuery ML models using call_bqml_agent.
+        4. Create visualizations and statistical analysis.
+        5. Perform advanced analysis such as forecasting and contribution analysis.
         """
     ),
     instruction=return_instructions_root(),
@@ -35,5 +40,6 @@ root_agent = Agent(
         data_retrieval_toolset,     # BigQuery data retrieval and schema tools
         ml_analysis_toolset,        # BigQuery ML analysis tools
         call_data_science_agent,    # Data science analysis with code execution
+        call_bqml_agent,           # BigQuery ML model operations
     ],
 )
