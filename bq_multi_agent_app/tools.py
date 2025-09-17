@@ -14,8 +14,7 @@ from google.adk.tools.mcp_tool.mcp_session_manager import \
     StreamableHTTPConnectionParams
 from google.adk.tools.mcp_tool.mcp_toolset import McpToolset
 
-from .sub_agents.bqml_agents.agent import bqml_agent
-from .sub_agents.ds_agents.agent import ds_agent
+from .sub_agents import ds_agent
 
 # Get toolbox URL from environment, default to local development
 TOOLBOX_URL = os.getenv("TOOLBOX_URL", "http://127.0.0.1:5000")
@@ -100,52 +99,4 @@ async def call_data_science_agent(
     except Exception as e:
         error_message = f"Error in data science analysis: {str(e)}"
         tool_context.state["ds_analysis_error"] = error_message
-        return error_message
-
-
-async def call_bqml_agent(
-    question: str,
-    tool_context: ToolContext,
-) -> str:
-    """
-    Call BQML agent for BigQuery ML operations.
-
-    This function wraps the BQML agent as a tool to handle BQML model creation,
-    training, and inspection tasks.
-
-    Args:
-        question: The BQML-related question or task
-        tool_context: Context for sharing state between tools
-
-    Returns:
-        BQML operation result with model information and insights
-    """
-    full_request = f"""
-    Please help with the following BigQuery ML task:
-
-    TASK: {question}
-
-    Please:
-    1. Use rag_response to get relevant BQML documentation if needed
-    2. Check for existing models if applicable using check_bq_models
-    3. Generate appropriate BQML code and get user approval before execution
-    4. Execute the BQML operations using the available tools
-    5. Provide clear explanations and results
-    """
-
-    # Wrap BQML agent to handle BQML operations properly
-    agent_tool = AgentTool(agent=bqml_agent)
-
-    try:
-        result = await agent_tool.run_async(
-            args={"request": full_request},
-            tool_context=tool_context
-        )
-        # Store result for potential use by other tools
-        tool_context.state["bqml_result"] = result
-        return result
-
-    except Exception as e:
-        error_message = f"Error in BQML operations: {str(e)}"
-        tool_context.state["bqml_error"] = error_message
         return error_message

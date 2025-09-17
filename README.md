@@ -276,7 +276,7 @@ The agent intelligently chooses between four approaches:
 
 **PATH 4: BQML Operations (BigQuery ML)**
 - For custom machine learning model operations
-- Uses `call_bqml_agent` → BQML toolset + RAG corpus
+- Delegates to BQML sub-agent → BQML toolset + RAG corpus
 - Handles model creation, training, evaluation, and documentation
 
 ## Project Structure

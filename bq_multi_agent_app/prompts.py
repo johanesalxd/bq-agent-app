@@ -37,7 +37,7 @@ def return_instructions_root() -> str:
 
         **PATH 4: BigQuery ML (BQML) Operations**
         Use this for tasks that require creating, training, or managing BigQuery ML models:
-        - Use 'call_bqml_agent' for BQML-related tasks such as:
+        - Delegate to the BQML sub-agent for BQML-related tasks such as:
             - Creating machine learning models (classification, regression, clustering, custom forecasting, etc.)
             - Training models on BigQuery data
             - Evaluating model performance
