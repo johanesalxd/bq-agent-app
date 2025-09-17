@@ -49,3 +49,5 @@ toolsets:
   ml_analysis_toolset:
     - bigquery-forecast
     - bigquery-analyze-contribution
+  bqml_toolset:
+    - bigquery-execute-sql
