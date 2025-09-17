@@ -23,7 +23,7 @@ uv sync
 # Activate environment
 source .venv/bin/activate
 
-# Setup MCP Toolbox (for Multi-Agent System)
+# Setup MCP Toolbox
 cd setup/mcp_toolbox
 
 # Update the script parameters for your OS before running
@@ -48,6 +48,95 @@ cd ../..
 
 # Run ADK
 uv run adk web
+```
+
+## BQML Agent Setup
+
+This section covers setting up the BQML agent with RAG corpus integration for enhanced BigQuery ML capabilities.
+
+### Prerequisites for BQML Agent
+
+In addition to the basic prerequisites, the BQML agent requires:
+
+1. **Additional APIs enabled**:
+   - Vertex AI API
+   - BigQuery API (already required)
+   - Cloud Resource Manager API
+
+2. **Additional permissions** for your account:
+   - Vertex AI User
+   - BigQuery User
+   - BigQuery Data Viewer
+
+3. **Enable required APIs**:
+   ```bash
+   # Enable required Google Cloud APIs
+   gcloud services enable aiplatform.googleapis.com
+   gcloud services enable bigquery.googleapis.com
+   gcloud services enable cloudresourcemanager.googleapis.com
+   ```
+
+### BQML Environment Configuration
+
+After completing the basic setup, configure BQML-specific environment variables:
+
+```bash
+# Edit your .env file to include BQML configuration
+# The basic setup already covers most variables, add these BQML-specific ones:
+
+# BQML Agent configuration (leave empty initially)
+BQML_RAG_CORPUS_NAME=
+```
+
+### RAG Corpus Setup
+
+The BQML agent uses a RAG (Retrieval-Augmented Generation) corpus for enhanced BQML documentation access:
+
+```bash
+# From the project root directory
+uv run python setup/rag_corpus/create_bqml_corpus.py
+```
+
+**What this script does:**
+
+1. **Checks for existing corpus**: If `BQML_RAG_CORPUS_NAME` is empty in your `.env` file
+2. **Creates new RAG corpus**: Sets up a Vertex AI RAG corpus with text-embedding-005
+3. **Ingests BQML documentation**: Downloads and processes Google's BQML documentation from GCS
+4. **Updates environment**: Automatically writes the corpus name to your `.env` file
+
+### Expected Output
+
+When the RAG corpus setup runs successfully:
+
+```
+Creating new BQML RAG corpus...
+Corpus created: projects/123456789/locations/us-west4/ragCorpora/1234567890123456789
+BQML_RAG_CORPUS_NAME 'projects/123456789/locations/us-west4/ragCorpora/1234567890123456789' written to /path/to/your/project/.env
+Importing files to corpus: projects/123456789/locations/us-west4/ragCorpora/1234567890123456789
+Files imported to corpus: projects/123456789/locations/us-west4/ragCorpora/1234567890123456789
+```
+
+### Verify BQML Setup
+
+```bash
+# Check that BQML_RAG_CORPUS_NAME is now populated
+cat .env | grep BQML_RAG_CORPUS_NAME
+```
+
+### Region Selection for BQML
+
+**Important**: The BQML setup uses `us-west4` as the default region for Vertex AI RAG because:
+
+1. **Capacity Limitations**: `us-central1` has allowlisting-based access due to capacity limitations
+2. **RAG Engine Availability**: `us-west4` has reliable availability for Vertex AI RAG Engine
+
+### Testing BQML RAG Integration
+
+Test the RAG corpus functionality:
+
+```bash
+# Test the RAG corpus with sample queries
+uv run python setup/rag_corpus/test_rag.py "What BQML model types are available?"
 ```
 
 ## Additional Guides
@@ -118,6 +207,21 @@ This project provides a comprehensive **Multi-Agent System** for BigQuery analyt
 
 "Compare revenue across product categories with statistical testing"
 → Root agent queries data, DS agent performs statistical analysis
+```
+
+**BQML Operations**
+```
+"Create a logistic regression model for customer churn prediction"
+→ BQML agent queries RAG corpus, generates CREATE MODEL statement
+
+"What BQML model types are available for forecasting?"
+→ BQML agent retrieves documentation about ARIMA_PLUS and time series models
+
+"Show me how to evaluate a BQML model"
+→ BQML agent provides ML.EVALUATE function documentation and examples
+
+"List existing BQML models in my dataset"
+→ Root agent queries BigQuery information schema for ML models
 ```
 
 ## Architecture

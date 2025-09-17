@@ -20,6 +20,8 @@ env_file_path = Path(__file__).parent.parent.parent / ".env"
 load_dotenv(dotenv_path=env_file_path)
 
 PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT")
+# Default to us-west4 region (supports Vertex AI RAG)
+LOCATION = os.getenv("GOOGLE_CLOUD_LOCATION", "us-west4")
 corpus_name = os.getenv("BQML_RAG_CORPUS_NAME")
 
 display_name = "bqml_referenceguide_corpus"
@@ -30,7 +32,7 @@ paths = [
 ]  # Supports Google Cloud Storage and Google Drive Links
 
 # Initialize Vertex AI API once per session
-vertexai.init(project=PROJECT_ID, location="us-central1")
+vertexai.init(project=PROJECT_ID, location=LOCATION)
 
 
 def create_RAG_corpus():

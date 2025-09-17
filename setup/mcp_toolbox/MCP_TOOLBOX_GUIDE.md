@@ -34,7 +34,6 @@ Running the toolbox locally is ideal for development and testing.
 3.  **Run the Toolbox Server:**
     Start the server, pointing it to your custom `tools.yaml` configuration.
     ```bash
-    cd setup/mcp_toolbox
     ./toolbox --tools-file=tools.yaml --port=5000
     ```
     The toolbox will now be running at `http://127.0.0.1:5000`.
