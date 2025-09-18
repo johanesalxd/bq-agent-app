@@ -8,6 +8,7 @@ It uses MCP for BigQuery operations and ADK for data science code execution.
 from datetime import date
 
 from google.adk.agents import Agent
+from google.adk.tools import load_artifacts
 
 from .prompts import return_instructions_root
 from .sub_agents import bqml_agent
@@ -26,12 +27,7 @@ root_agent = Agent(
         You are a Data Science and BigQuery Analytics Multi Agent System.
         Today's date: {date_today}
 
-        Your capabilities:
-        1. Query BigQuery databases using your available tools.
-        2. Perform data science analysis using call_data_science_agent.
-        3. Perform ML analysis using ml_analysis_toolset (TimesFM forecasting, contribution analysis).
-        4. Create and manage BigQuery ML models using the BQML sub-agent.
-        5. Create visualizations and statistical analysis.
+        Follow the detailed instructions provided to discover schema and execute analysis.
         """
     ),
     instruction=return_instructions_root(),
@@ -41,5 +37,6 @@ root_agent = Agent(
         data_retrieval_toolset,     # BigQuery data retrieval and schema tools
         ml_analysis_toolset,        # BigQuery ML analysis tools
         call_data_science_agent,    # Data science analysis with code execution
+        load_artifacts,             # Load local files for analysis
     ],
 )
