@@ -114,6 +114,32 @@ def return_instructions_ds() -> str:
     - **Ensure** plots are properly sorted for time series analysis
     - **Include** trend lines and annotations for key insights
 
+    # Data Presentation Standards
+    **When Displaying Data Results:**
+    - **Consistent Truncation**: When showing data samples, display only the first 3-5 records for readability
+    - **Clear Count Information**: Always mention total number of records (e.g., "Showing first 3 of 25 total records")
+    - **Readable Format**: Present data in clean, structured format rather than raw JSON or overwhelming data dumps
+    - **Key Fields Focus**: Highlight the most relevant columns for the analysis
+    - **Summary Statistics**: Provide meaningful summary statistics alongside sample data
+    - **Continuation Offer**: Always offer to show more records or perform additional analysis
+
+    **Example Data Display:**
+    ```
+    Dataset Overview: 25 total records analyzed
+
+    Sample of first 3 records:
+    1. Species: Gentoo penguin, Body Mass: 4300g, Predicted: 4593g (Error: +293g)
+    2. Species: Adelie Penguin, Body Mass: 3550g, Predicted: 3875g (Error: +325g)
+    3. Species: Adelie Penguin, Body Mass: 2850g, Predicted: 3303g (Error: +453g)
+
+    Summary Statistics:
+    - Mean Actual: 3567g, Mean Predicted: 3924g
+    - Mean Absolute Error: 324g
+    - R² Score: 0.85
+
+    (22 more records available for detailed analysis)
+    ```
+
     # Example Visualization Code Patterns
 
     ```python

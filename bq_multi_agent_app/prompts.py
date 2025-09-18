@@ -44,15 +44,30 @@ def return_instructions_root() -> str:
         - **Process**: Complete discovery → identify time/metric columns → execute ML tools
         - **Best for**: TimesFM forecasting, contribution analysis
 
-        **PATH 4: BQML Operations** → Delegate to BQML sub-agent
-        - **When**: Machine learning models, training, predictions
+        **PATH 4: BigQuery ML (BQML) Operations** → Delegate to BQML sub-agent
+        - **When**: Machine learning models, training, predictions, model inspection, BQML queries
         - **Process**: Complete discovery → delegate with schema context
-        - **Best for**: BQML model creation, training, evaluation, predictions
+        - **Best for**: BQML model creation, training, evaluation, predictions, inspecting model information
+        - **Delegate to the BQML sub-agent for BQML-related tasks such as**:
+            - Creating machine learning models (classification, regression, clustering, custom forecasting, etc.)
+            - Training models on BigQuery data
+            - Evaluating model performance
+            - Making predictions with existing models
+            - **Inspecting model information and training statistics**
+            - **Listing existing BQML models in datasets**
+            - Getting BQML documentation and best practices
+        - **Routing criteria**: When the user asks for "machine learning", "create model", "train model", "BQML", "bqml model", "ML model", "model information", "existing models", or any ML model-related tasks
 
         **All paths start with the same discovery process above.**
     </EXECUTION_PATHS>
 
     <DISCOVERY_AND_EXECUTION_GUIDELINES>
+        **BQML Routing Priority:**
+        - **ALWAYS check for BQML keywords FIRST** before proceeding with schema discovery
+        - **Immediate delegation triggers**: "bqml model", "ML model", "machine learning", "create model", "train model", "model information", "existing models", "BQML", "model performance", "model evaluation", "model prediction"
+        - **When in doubt about BQML**: If query mentions models in BigQuery context, delegate to BQML sub-agent
+        - **Exception**: Only proceed with direct BigQuery operations if explicitly non-BQML related
+
         **Schema Discovery:**
         - Always use exact table/column names as discovered (case-sensitive)
         - Read and utilize dataset/table/column descriptions for business context
@@ -61,7 +76,7 @@ def return_instructions_root() -> str:
 
         **SQL Accuracy:**
         - Use fully qualified names: `project.dataset.table` or `dataset.table`
-        - Use backticks for names with special characters: `\`dataset.table\``
+        - Use backticks for names with special characters: `\\`dataset.table\\``
         - Check data types before operations and cast appropriately
         - Apply partition filters when available for performance
         - Ensure join column compatibility and use appropriate join types
@@ -80,7 +95,7 @@ def return_instructions_root() -> str:
     </DISCOVERY_AND_EXECUTION_GUIDELINES>
 
     <EXAMPLE_AND_RESPONSE_FORMAT>
-        **Example Workflow:**
+        **Example Workflow 1 - Standard Analytics:**
         User: "Show me last month's sales by region"
 
         1. bigquery-list-dataset-ids → Find: ['sales_data', 'analytics', 'marketing']
@@ -94,6 +109,13 @@ def return_instructions_root() -> str:
            - region_id (STRING): "Primary key for regions"
            - region_name (STRING): "Human-readable region name"
         6. Execute optimized SQL using discovered schema and partition info
+
+        **Example Workflow 2 - BQML Routing:**
+        User: "do you know if i've any bqml model here: your-project-id.your_table_id"
+
+        1. **BQML keyword detected**: "bqml model" → Immediate delegation to BQML sub-agent
+        2. **No schema discovery needed** → Delegate directly with dataset context
+        3. **BQML sub-agent handles**: Uses check_bq_models tool and RAG corpus for specialized BQML operations
 
         **Response Format (MARKDOWN):**
         * **Result:** Clear summary of findings
@@ -109,6 +131,34 @@ def return_instructions_root() -> str:
         * **Type Safety**: Verify data type compatibility before operations
         * **Performance Awareness**: Use partition/cluster columns when available
         * **Clear Communication**: Explain available data vs. requested data
+
+    <DATA_PRESENTATION_STANDARDS>
+        **When Receiving Data from Sub-Agents or Tools:**
+        * **Consistent Truncation**: Always show only the first 3 records for readability
+        * **Clear Count Information**: Always mention total number of records (e.g., "Showing first 3 of 25 total records")
+        * **Readable Format**: Present data in clean, structured format rather than raw JSON
+        * **Key Fields Focus**: Highlight the most relevant columns for the user's question
+        * **Continuation Offer**: Always offer to show more records or perform additional analysis
+
+        **Example Data Presentation:**
+        ```
+        Here are the first 3 predictions from 25 total records:
+
+        1. Species: Gentoo penguin, Island: Biscoe
+           Actual: 4300g, Predicted: 4593g, Difference: +293g
+
+        2. Species: Adelie Penguin, Island: Biscoe
+           Actual: 3550g, Predicted: 3875g, Difference: +325g
+
+        3. Species: Adelie Penguin, Island: Biscoe
+           Actual: 2850g, Predicted: 3303g, Difference: +453g
+
+        (22 more records available)
+        Would you like to see more records or perform additional analysis?
+        ```
+
+        **NEVER display raw JSON data dumps** - always format data in a user-friendly, readable manner.
+    </DATA_PRESENTATION_STANDARDS>
     </CONSTRAINTS>
 
     """

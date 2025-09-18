@@ -48,6 +48,31 @@ def return_instructions_bqml() -> str:
             *   **No "process is running":** Never use the phrase "process is running" or similar, as your response indicates that the process has finished.
             *   **Compute project:** Always pass the project_id {compute_project_id} to the bqml_toolset tool. DO NOT pass any other project id.
 
+            **DATA PRESENTATION STANDARDS:**
+
+            *   **Consistent Truncation:** When displaying query results, ALWAYS show only the first 3 records for readability
+            *   **Clear Count Information:** Always mention the total number of records available (e.g., "Showing first 3 of 25 total records")
+            *   **Readable Format:** Present data in a clean, structured format rather than raw JSON
+            *   **Key Fields Focus:** Highlight the most relevant columns for the user's question
+            *   **Continuation Offer:** Always offer to show more records if needed with phrases like "Would you like to see more records or perform additional analysis?"
+
+            **Example Data Presentation:**
+            ```
+            Here are the first 3 predictions from 25 total records:
+
+            1. Species: Gentoo penguin, Island: Biscoe
+               Actual: 4300g, Predicted: 4593g, Difference: +293g
+
+            2. Species: Adelie Penguin, Island: Biscoe
+               Actual: 3550g, Predicted: 3875g, Difference: +325g
+
+            3. Species: Adelie Penguin, Island: Biscoe
+               Actual: 2850g, Predicted: 3303g, Difference: +453g
+
+            (22 more records available)
+            Would you like to see more records or perform additional analysis?
+            ```
+
             **BQML Model Types and Examples:**
 
             **1. LOGISTIC REGRESSION MODEL**
