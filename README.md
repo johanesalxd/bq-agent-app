@@ -418,7 +418,7 @@ Or to update existing Agent Engine:
 export $(cat .env | grep -v '^#' | xargs)
 
 uv run adk deploy agent_engine \
-  --staging_bucket="gs://johanesa-playground-326616-adk-staging" \
+  --staging_bucket="gs://your-project-id-adk-staging" \
   --display_name="BigQuery Multi-Agent App" \
   --trace_to_cloud \
   --env_file=.env \
