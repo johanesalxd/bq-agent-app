@@ -432,6 +432,13 @@ After deployment:
 - Integrated with Vertex AI ecosystem for enterprise use
 - Supports both synchronous and asynchronous operations
 
+To use ADK Web frontend with Agent Engine:
+```bash
+agent_engine_id="your-agent-engine-id"
+
+adk web --session_db_url=agentengine://${agent_engine_id}
+```
+
 ### Deployment Combinations
 
 | MCP Toolbox | Agent | Use Case |
