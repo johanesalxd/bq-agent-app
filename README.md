@@ -405,8 +405,6 @@ After deployment:
 export $(cat .env | grep -v '^#' | xargs)
 
 uv run adk deploy agent_engine \
-  --project=your-project-id \
-  --region=us-central1 \
   --staging_bucket="gs://your-project-id-adk-staging" \
   --display_name="BigQuery Multi-Agent App" \
   --trace_to_cloud \

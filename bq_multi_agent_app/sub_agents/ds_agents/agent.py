@@ -12,8 +12,7 @@ from google.adk.agents import Agent
 from google.adk.code_executors.vertex_ai_code_executor import \
     VertexAiCodeExecutor
 
-from bq_multi_agent_app.sub_agents.ds_agents.prompts import \
-    return_instructions_ds
+from .prompts import return_instructions_ds
 
 root_agent = Agent(
     model='gemini-2.5-flash',
