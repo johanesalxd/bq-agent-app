@@ -412,6 +412,20 @@ uv run adk deploy agent_engine \
   ./bq_multi_agent_app
 ```
 
+Or to update existing Agent Engine:
+```bash
+# Set environment variables
+export $(cat .env | grep -v '^#' | xargs)
+
+uv run adk deploy agent_engine \
+  --staging_bucket="gs://johanesa-playground-326616-adk-staging" \
+  --display_name="BigQuery Multi-Agent App" \
+  --trace_to_cloud \
+  --env_file=.env \
+  --agent_engine_id=your-agent-engine-id \
+  ./bq_multi_agent_app
+```
+
 After deployment:
 - Agent is deployed to Vertex AI Agent Engine with managed sessions
 - Provides programmatic access via the Agent Engine API
