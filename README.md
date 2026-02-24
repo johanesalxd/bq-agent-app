@@ -17,38 +17,27 @@ cd bq-agent-app
 # Install uv (if not already installed)
 # Visit: https://docs.astral.sh/uv/getting-started/installation/
 
-# Install dependencies with uv
+# Install dependencies
 uv sync
 
 # Activate environment
 source .venv/bin/activate
+```
 
-# Setup MCP Toolbox
-cd setup/mcp_toolbox
-
-# Update the script parameters for your OS before running
-# Edit install-mcp-toolbox.sh and update:
-# - MCP_VERSION: choose the version from https://github.com/googleapis/genai-toolbox/releases
-# - MCP_OS: "linux" for Linux, "darwin" for macOS
-# - MCP_ARCH: "amd64" for Intel/x64, "arm64" for Apple Silicon
-# Example for macOS Apple Silicon: MCP_OS="darwin" MCP_ARCH="arm64"
-
-chmod +x install-mcp-toolbox.sh
-./install-mcp-toolbox.sh
-cd ../..
-
-# Configure the environment
+3. **Configure Environment**
+```bash
 cp .env.example .env
-export $(cat .env | grep -v '^#' | xargs)
+# Edit .env and set your project details:
+# GOOGLE_CLOUD_PROJECT=your-project-id
+# GOOGLE_CLOUD_LOCATION=us-central1
+```
 
-# Run the MCP server with custom configuration
-cd setup/mcp_toolbox
-./toolbox --tools-file=tools.yaml --port=5000
-cd ../..
-
-# Run ADK
+4. **Run**
+```bash
 uv run adk web
 ```
+
+BigQuery access uses Application Default Credentials (ADC) automatically — no additional server or toolbox setup required.
 
 ## BQML Agent Setup
 
@@ -70,7 +59,6 @@ In addition to the basic prerequisites, the BQML agent requires:
 
 3. **Enable required APIs**:
    ```bash
-   # Enable required Google Cloud APIs
    gcloud services enable aiplatform.googleapis.com
    gcloud services enable bigquery.googleapis.com
    gcloud services enable cloudresourcemanager.googleapis.com
@@ -78,102 +66,57 @@ In addition to the basic prerequisites, the BQML agent requires:
 
 ### BQML Environment Configuration
 
-After completing the basic setup, configure BQML-specific environment variables:
-
 ```bash
-# Edit your .env file to include BQML configuration
-# The basic setup already covers most variables, add these BQML-specific ones:
-
 # BQML Agent configuration (leave empty initially)
 BQML_RAG_CORPUS_NAME=
 ```
 
 ### RAG Corpus Setup
 
-The BQML agent uses a RAG (Retrieval-Augmented Generation) corpus for enhanced BQML documentation access:
+The BQML agent uses a RAG corpus for enhanced BQML documentation access:
 
 ```bash
-# From the project root directory
 uv run python setup/rag_corpus/create_bqml_corpus.py
 ```
 
-**What this script does:**
-
-1. **Checks for existing corpus**: If `BQML_RAG_CORPUS_NAME` is empty in your `.env` file
-2. **Creates new RAG corpus**: Sets up a Vertex AI RAG corpus with text-embedding-005
-3. **Ingests BQML documentation**: Downloads and processes Google's BQML documentation from GCS
-4. **Updates environment**: Automatically writes the corpus name to your `.env` file
-
-### Expected Output
-
-When the RAG corpus setup runs successfully:
-
-```
-Creating new BQML RAG corpus...
-Corpus created: projects/123456789/locations/us-west4/ragCorpora/1234567890123456789
-BQML_RAG_CORPUS_NAME 'projects/123456789/locations/us-west4/ragCorpora/1234567890123456789' written to /path/to/your/project/.env
-Importing files to corpus: projects/123456789/locations/us-west4/ragCorpora/1234567890123456789
-Files imported to corpus: projects/123456789/locations/us-west4/ragCorpora/1234567890123456789
-```
-
-### Verify BQML Setup
-
-```bash
-# Check that BQML_RAG_CORPUS_NAME is now populated
-cat .env | grep BQML_RAG_CORPUS_NAME
-```
+This script creates a Vertex AI RAG corpus with text-embedding-005, ingests BQML documentation, and writes the corpus name to your `.env` file automatically.
 
 ### Region Selection for BQML
 
-**Important**: The BQML setup uses `us-west4` as the default region for Vertex AI RAG because:
-
-1. **Capacity Limitations**: `us-central1` has allowlisting-based access due to capacity limitations
-2. **RAG Engine Availability**: `us-west4` has reliable availability for Vertex AI RAG Engine
-
-### Testing BQML RAG Integration
-
-Test the RAG corpus functionality:
-
-```bash
-# Test the RAG corpus with sample queries
-uv run python setup/rag_corpus/test_rag.py "What BQML model types are available?"
-```
+**Important**: The BQML setup uses `us-west4` as the default region for Vertex AI RAG due to capacity availability.
 
 ## Additional Guides
 
-- [Agentspace Management Guide](setup/agentspace/AGENTSPACE_MANAGEMENT_GUIDE.md) - Comprehensive guide for managing Google Cloud Agentspace agents and ReasoningEngines
-- [Vertex Extensions Setup Guide](setup/vertex_extensions/VERTEX_EXTENSIONS_GUIDE.md) - Complete guide for setting up Vertex AI Extensions for code interpretation
-- [MCP Toolbox Deployment Guide](setup/mcp_toolbox/MCP_TOOLBOX_GUIDE.md) - Deploy MCP toolbox to Google Cloud Run for production use
+- [Agentspace Management Guide](setup/agentspace/AGENTSPACE_MANAGEMENT_GUIDE.md) - Manage Google Cloud Agentspace agents and ReasoningEngines
+- [Vertex Extensions Setup Guide](setup/vertex_extensions/VERTEX_EXTENSIONS_GUIDE.md) - Set up Vertex AI Extensions for code interpretation
 
 ## Implementation
 
-This project provides a comprehensive **Multi-Agent System** for BigQuery analytics with advanced data science capabilities.
+This project provides a **Multi-Agent System** for BigQuery analytics with advanced data science capabilities.
 
 | Feature | Multi-Agent System |
 |---------|-------------------|
 | **Directory** | `bq_multi_agent_app/` |
-| **Setup Complexity** | Moderate |
-| **BigQuery Operations** | ✅ |
-| **MCP Protocol Support** | ✅ |
+| **BigQuery Operations** | ✅ Built-in ADK BigQueryToolset |
 | **Python Data Science** | ✅ |
 | **Statistical Analysis** | ✅ |
 | **Data Visualization** | ✅ |
 | **Multi-Agent Orchestration** | ✅ |
-| **Additional Dependencies** | MCP Toolbox |
+| **BQML Integration** | ✅ |
 
 ### Key Benefits
 
-- **Advanced Analytics**: Complete data science workflows with comprehensive analysis and visualizations
+- **Zero Infrastructure**: BigQuery tools use ADC directly — no external server required
+- **Advanced Analytics**: Complete data science workflows with analysis and visualizations
 - **Multi-Agent Architecture**: Root agent orchestrates specialized sub-agents for different tasks
-- **MCP Integration**: Uses Model Context Protocol for standardized BigQuery operations
 
 ## Core Features
 
 - 🔍 **Dataset Discovery**: List and explore BigQuery datasets
 - 📊 **Table Analysis**: Get detailed schema and metadata information
 - 🔎 **SQL Execution**: Execute complex SQL queries through natural language
-- 🤖 **AI-Powered**: Uses Gemini 2.5 Flash for intelligent query understanding
-- 🔐 **Flexible Authentication**: Multiple authentication methods supported
+- 🤖 **AI-Powered**: Uses Gemini 3 Flash Preview for intelligent query understanding
+- 🔐 **ADC Authentication**: Application Default Credentials for seamless auth
 
 ## Advanced Features
 
@@ -181,10 +124,8 @@ This project provides a comprehensive **Multi-Agent System** for BigQuery analyt
 - 🐍 **Python Analytics**: Stateful code execution for advanced data science workflows
 - 📈 **Data Visualization**: Automated chart generation with matplotlib
 - 🧠 **Statistical Analysis**: Comprehensive statistical testing and modeling
-- 🔗 **MCP Integration**: Uses Model Context Protocol for BigQuery operations
-- 💬 **Conversational Analytics**: Interactive BigQuery exploration via MCP
-- 📊 **Time Series Forecasting**: Built-in forecasting capabilities for temporal data
-- 📝 **Pre-defined SQL Templates**: Execute common SQL patterns efficiently
+- 📊 **Time Series Forecasting**: Built-in forecasting capabilities via `AI.FORECAST`
+- 💬 **Natural Language Queries**: `ask_data_insights` for NL-to-BQ analysis
 
 ## Usage
 
@@ -215,10 +156,7 @@ This project provides a comprehensive **Multi-Agent System** for BigQuery analyt
 → BQML agent queries RAG corpus, generates CREATE MODEL statement
 
 "What BQML model types are available for forecasting?"
-→ BQML agent retrieves documentation about ARIMA_PLUS and time series models
-
-"Show me how to evaluate a BQML model"
-→ BQML agent provides ML.EVALUATE function documentation and examples
+→ BQML agent retrieves ARIMA_PLUS and time series model documentation
 
 "List existing BQML models in my dataset"
 → Root agent queries BigQuery information schema for ML models
@@ -227,57 +165,31 @@ This project provides a comprehensive **Multi-Agent System** for BigQuery analyt
 ## Architecture
 
 ### Foundation
-The system is built on:
-- **Google Agent Development Kit (ADK)**: Framework for building AI agents
-- **Gemini 2.5 Flash**: Large language model for natural language understanding
-- **Vertex AI**: Google Cloud's AI platform integration
+- **Google Agent Development Kit (ADK) 1.25**: Framework for building AI agents
+- **Gemini 3 Flash Preview**: Large language model for natural language understanding
+- **ADK BigQueryToolset**: Built-in BigQuery integration via ADC (no external server)
+- **Vertex AI**: Google Cloud AI platform integration
 
 ### Multi-Agent System Architecture
 ```
 Root Agent (bigquery_ds_agent)
-├── Conversational Toolset (MCP Toolbox)
-│   └── bigquery-conversational-analytics    # Quick insights & answers
-├── Data Retrieval Toolset (MCP Toolbox)
-│   ├── bigquery-execute-sql                 # Raw data extraction
-│   ├── bigquery-list-dataset-ids           # Dataset discovery
-│   ├── bigquery-get-dataset-info           # Dataset metadata
-│   ├── bigquery-list-table-ids             # Table discovery
-│   └── bigquery-get-table-info             # Table schema
-├── ML Analysis Toolset (MCP Toolbox)
-│   ├── bigquery-forecast                    # TimesFM forecasting
-│   └── bigquery-analyze-contribution        # Contribution analysis
+├── BigQueryToolset (ADK built-in, ADC auth)
+│   ├── list_dataset_ids        # Dataset discovery
+│   ├── get_dataset_info        # Dataset metadata
+│   ├── list_table_ids          # Table discovery
+│   ├── get_table_info          # Table schema
+│   ├── execute_sql             # SQL execution
+│   ├── forecast                # AI.FORECAST time series
+│   └── ask_data_insights       # Natural language queries
 ├── DS Sub-Agent (ds_agent)
 │   ├── Python Code Execution
 │   ├── Data Visualization
 │   └── Statistical Analysis
 └── BQML Sub-Agent (bqml_agent)
-    ├── BQML Toolset (MCP)                   # SQL/BQML execution
-    ├── RAG Response                         # BQML documentation queries
-    └── Model Listing                        # BigQuery ML model discovery
+    ├── BigQueryToolset (ADK built-in)
+    ├── RAG Response             # BQML documentation queries
+    └── Model Listing            # BigQuery ML model discovery
 ```
-
-#### Four-Path Workflow
-The agent intelligently chooses between four approaches:
-
-**PATH 1: Quick Insights (Conversational Analytics)**
-- For simple questions and quick answers
-- Uses `bigquery-conversational-analytics` directly
-- Returns natural language insights
-
-**PATH 2: In-Depth Analysis (Data Retrieval + Data Science)**
-- For complex analysis and visualizations
-- Uses `bigquery-execute-sql` → `call_data_science_agent`
-- Provides full control over data and analysis
-
-**PATH 3: ML Analysis (TimesFM + Contribution Analysis)**
-- For forecasting and understanding drivers of change
-- Uses `bigquery-forecast` (TimesFM model) and `bigquery-analyze-contribution`
-- Quick ML insights without custom model training
-
-**PATH 4: BQML Operations (BigQuery ML)**
-- For custom machine learning model operations
-- Delegates to BQML sub-agent → BQML toolset + RAG corpus
-- Handles model creation, training, evaluation, and documentation
 
 ## Project Structure
 
@@ -285,106 +197,52 @@ The agent intelligently chooses between four approaches:
 bq-agent-app/
 ├── pyproject.toml                   # uv package configuration
 ├── uv.lock                          # Dependency lock file
+├── .env.example                     # Environment variable template
 ├── bq_multi_agent_app/              # Multi-Agent System
-│   ├── agent.py                     # Root agent with MCP integration
-│   ├── tools.py                     # MCP BigQuery tools + agent wrappers
+│   ├── agent.py                     # Root agent
+│   ├── tools.py                     # BigQueryToolset + agent wrappers
 │   ├── prompts.py                   # Root agent instructions
 │   └── sub_agents/
 │       ├── ds_agents/               # Data Science Agent
-│       │   ├── agent.py             # Data science agent
-│       │   └── prompts.py           # DS agent instructions
+│       │   ├── agent.py
+│       │   └── prompts.py
 │       └── bqml_agents/             # BigQuery ML Agent
-│           ├── agent.py             # BQML agent with RAG integration
-│           ├── prompts.py           # BQML agent instructions
-│           └── tools.py             # BQML-specific tools (RAG, model listing)
-├── setup/                           # Setup and deployment tools
-│   ├── mcp_toolbox/                 # MCP Toolbox setup
-│   │   ├── install-mcp-toolbox.sh   # Local installation script
-│   │   ├── deploy.sh                # Cloud Run deployment
-│   │   ├── Dockerfile               # Container definition
-│   │   └── MCP_TOOLBOX_GUIDE.md     # Deployment guide
-│   ├── rag_corpus/                  # BQML RAG Corpus Setup
-│   │   ├── create_bqml_corpus.py    # RAG corpus creation script
-│   │   └── test_rag.py              # RAG corpus testing script
-│   ├── vertex_extensions/           # Vertex AI Extensions Management
-│   │   ├── setup_vertex_extensions.py   # Create extensions
-│   │   ├── cleanup_vertex_extensions.py # Clean up extensions
-│   │   ├── utils.py                 # Shared utilities
-│   │   └── VERTEX_EXTENSIONS_GUIDE.md   # Setup guide
-│   └── agentspace/                  # Agentspace Management
-│       ├── manage_agentspace.sh     # Agentspace and ReasoningEngine management
-│       ├── test_agent_engine.py     # Testing utilities
-│       └── AGENTSPACE_MANAGEMENT_GUIDE.md  # Comprehensive guide
-└── README.md
+│           ├── agent.py
+│           ├── prompts.py
+│           └── tools.py
+└── setup/                           # Optional setup tools
+    ├── rag_corpus/                  # BQML RAG Corpus Setup
+    │   ├── create_bqml_corpus.py
+    │   └── test_rag.py
+    ├── vertex_extensions/           # Vertex AI Extensions
+    │   ├── setup_vertex_extensions.py
+    │   ├── cleanup_vertex_extensions.py
+    │   ├── utils.py
+    │   └── VERTEX_EXTENSIONS_GUIDE.md
+    └── agentspace/                  # Agentspace Management
+        ├── manage_agentspace.sh
+        ├── test_agent_engine.py
+        └── AGENTSPACE_MANAGEMENT_GUIDE.md
 ```
 
 ## Prerequisites
 
-- **Python 3.11+**
+- **Python 3.12**
 - **uv** package manager ([installation guide](https://docs.astral.sh/uv/getting-started/installation/))
 - **Google Cloud Project** with BigQuery enabled
-- **Google Cloud credentials**
+- **Application Default Credentials** (`gcloud auth application-default login`)
 
 ## Deployment
 
-The Multi-Agent System requires both the MCP Toolbox and the Agent to be deployed. You can choose to run each component locally or deploy to Cloud Run based on your needs.
-
-### Step 1: Deploy the MCP Toolbox
-
-The MCP Toolbox provides BigQuery connectivity for the agent.
-
-#### Option A: Run MCP Toolbox Locally
+### Local Development
 ```bash
-# Set environment variables
 cp .env.example .env
-export $(cat .env | grep -v '^#' | xargs)
-
-# Start the MCP server with custom configuration
-cd setup/mcp_toolbox
-BIGQUERY_PROJECT=$BIGQUERY_PROJECT ./toolbox --tools-file=tools.yaml --port=5000
+# Set GOOGLE_CLOUD_PROJECT and GOOGLE_CLOUD_LOCATION in .env
+uv run adk web
 ```
 
-#### Option B: Deploy MCP Toolbox to Cloud Run
+### Cloud Run
 ```bash
-# Set environment variables
-cp .env.example .env
-export $(cat .env | grep -v '^#' | xargs)
-
-# Setup and deploy
-cd setup/mcp_toolbox
-chmod +x deploy.sh
-./deploy.sh
-
-# To deploy using a local `toolbox` binary instead of the release version, run:
-# ./deploy.sh local
-```
-
-The script will:
-- Enable required Google Cloud APIs
-- Create a service account with BigQuery permissions
-- Build and push the Docker image
-- Deploy to Cloud Run with `--allow-unauthenticated`
-- Provide the service URL for access
-
-### Step 2: Deploy the Agent
-
-The agent connects to the MCP Toolbox (local or cloud) to provide BigQuery functionality.
-
-#### Option A: Run Agent Locally
-```bash
-# Set environment variables
-cp .env.example .env
-export $(cat .env | grep -v '^#' | xargs)
-
-uv run adk web  # or uv run adk run
-```
-
-#### Option B: Deploy Agent to Cloud Run
-```bash
-# Set environment variables
-cp .env.example bq_multi_agent_app/.env
-export $(cat .env | grep -v '^#' | xargs)
-
 uv run adk deploy cloud_run \
   --project=your-project-id \
   --region=us-central1 \
@@ -394,16 +252,8 @@ uv run adk deploy cloud_run \
   ./bq_multi_agent_app
 ```
 
-After deployment:
-- Access your agent at the provided Cloud Run service URL
-- The web UI will be available for interactive testing
-- Cloud tracing is enabled for monitoring and debugging
-
-#### Option C: Deploy Agent to Agent Engine
+### Agent Engine
 ```bash
-# Set environment variables
-export $(cat .env | grep -v '^#' | xargs)
-
 uv run adk deploy agent_engine \
   --staging_bucket="gs://your-project-id-adk-staging" \
   --display_name="BigQuery Multi-Agent App" \
@@ -411,107 +261,35 @@ uv run adk deploy agent_engine \
   --env_file=.env \
   ./bq_multi_agent_app
 ```
-
-Or to update existing Agent Engine:
-```bash
-# Set environment variables
-export $(cat .env | grep -v '^#' | xargs)
-
-uv run adk deploy agent_engine \
-  --staging_bucket="gs://your-project-id-adk-staging" \
-  --display_name="BigQuery Multi-Agent App" \
-  --trace_to_cloud \
-  --env_file=.env \
-  --agent_engine_id=your-agent-engine-id \
-  ./bq_multi_agent_app
-```
-
-After deployment:
-- Agent is deployed to Vertex AI Agent Engine with managed sessions
-- Provides programmatic access via the Agent Engine API
-- Integrated with Vertex AI ecosystem for enterprise use
-- Supports both synchronous and asynchronous operations
-
-To use ADK Web frontend with Agent Engine:
-```bash
-agent_engine_id="your-agent-engine-id"
-
-adk web --session_db_url=agentengine://${agent_engine_id}
-```
-
-### Deployment Combinations
-
-| MCP Toolbox | Agent | Use Case |
-|-------------|-------|----------|
-| Local | Local | Development and testing |
-| Cloud Run | Local | Development with shared toolbox |
-| Cloud Run | Cloud Run | Full production deployment |
-| Cloud Run | Agent Engine | Enterprise deployment with managed sessions |
-
-**Note**: Ensure your service account has the necessary BigQuery permissions for your project. For advanced MCP configurations, refer to the [official documentation](https://googleapis.github.io/genai-toolbox/how-to/deploy_toolbox/).
 
 ## Agentspace Management
 
-Once your agent is deployed to Agent Engine, you can manage it through Google Cloud Agentspace. The project includes comprehensive tools for Agentspace operations:
+Once deployed to Agent Engine, manage via the included tools:
 
-### Features
-- **Agent Management**: List, deploy, delete, and replace agents in Agentspace
-- **ReasoningEngine Operations**: Manage ReasoningEngine sessions and handle deletion errors
-- **Error Resolution**: Automatically handle the common "child resources" deletion error
-- **Dry Run Mode**: Preview operations before execution
-
-### Quick Usage
 ```bash
 cd setup/agentspace
-
-# Make script executable
 chmod +x manage_agentspace.sh
-
-# Configure your project details in the script
-# Edit manage_agentspace.sh and update:
-# - PROJECT_ID, PROJECT_NUMBER
-# - REASONING_ENGINE_ID, AS_APP
-# - AGENT_DISPLAY_NAME
-
-# Common operations
-./manage_agentspace.sh list                    # List all agents
-./manage_agentspace.sh deploy                  # Deploy new agent
-./manage_agentspace.sh delete                  # Delete existing agent
-./manage_agentspace.sh delete-reasoning-engine # Fix deletion errors
-./manage_agentspace.sh help                    # Show all commands
+./manage_agentspace.sh list       # List all agents
+./manage_agentspace.sh deploy     # Deploy new agent
+./manage_agentspace.sh help       # Show all commands
 ```
 
-### Solving ReasoningEngine Deletion Errors
-If you encounter the error: *"The ReasoningEngine contains child resources: sessions"*, use:
-
-```bash
-# Preview what would be deleted
-./manage_agentspace.sh delete-reasoning-engine --dry-run
-
-# Delete sessions first, then ReasoningEngine (recommended)
-./manage_agentspace.sh delete-reasoning-engine
-
-# Or force delete everything at once
-./manage_agentspace.sh delete-reasoning-engine --force
-```
-
-For detailed instructions, see the [Agentspace Management Guide](setup/agentspace/AGENTSPACE_MANAGEMENT_GUIDE.md).
+See [Agentspace Management Guide](setup/agentspace/AGENTSPACE_MANAGEMENT_GUIDE.md) for details.
 
 ## Security Considerations
 
-- Use minimum required permissions
-- Store credentials securely
-- Review SQL queries executed by agents
-- Consider read-only mode for production
+- Use minimum required permissions for your GCP service account
+- BigQueryToolset is configured with `WriteMode.BLOCKED` by default (read-only)
+- Review SQL queries executed by agents before enabling write access
+- Store credentials securely using ADC or service account keys
 
 ## Related Resources
 
-- [Google Agent Development Kit Documentation](https://cloud.google.com/adk)
+- [Google Agent Development Kit Documentation](https://google.github.io/adk-docs/)
+- [ADK BigQuery Tools](https://google.github.io/adk-docs/integrations/bigquery/)
 - [BigQuery Documentation](https://cloud.google.com/bigquery/docs)
-- [Model Context Protocol](https://modelcontextprotocol.io/)
-- [MCP Toolbox Cloud Run Deployment Guide](https://googleapis.github.io/genai-toolbox/how-to/deploy_toolbox/)
-- [Blog Post: BigQuery meets Google ADK and MCP](https://cloud.google.com/blog/products/ai-machine-learning/bigquery-meets-google-adk-and-mcp)
+- [Vertex AI Agent Engine](https://cloud.google.com/vertex-ai/generative-ai/docs/agent-engine/overview)
 
 ---
 
-*Built with ❤️ using Google Agent Development Kit, BigQuery, and MCP*
+*Built with Google Agent Development Kit, BigQuery, and Gemini*
