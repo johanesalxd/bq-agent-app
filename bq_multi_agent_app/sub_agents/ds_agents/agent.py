@@ -9,13 +9,12 @@ function call interpretation errors.
 """
 
 from google.adk.agents import Agent
-from google.adk.code_executors.vertex_ai_code_executor import \
-    VertexAiCodeExecutor
+from google.adk.code_executors.vertex_ai_code_executor import VertexAiCodeExecutor
 
 from .prompts import return_instructions_ds
 
 root_agent = Agent(
-    model='gemini-2.5-flash',
+    model="gemini-3-flash-preview",
     name="ds_agent",
     instruction=return_instructions_ds(),
     code_executor=VertexAiCodeExecutor(

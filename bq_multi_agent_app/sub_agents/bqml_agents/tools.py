@@ -4,14 +4,14 @@ Tools for BQML Agent
 This module provides BQML-specific tools including:
 1. check_bq_models: List BigQuery ML models in a dataset
 2. rag_response: Query BQML documentation from RAG corpus
-3. bqml_toolset: MCP toolset for executing SQL/BQML statements
+3. bqml_toolset: ADK built-in BigQueryToolset for executing SQL/BQML statements
 """
 
 import os
 
-from google.adk.tools.mcp_tool.mcp_session_manager import \
-    StreamableHTTPConnectionParams
-from google.adk.tools.mcp_tool.mcp_toolset import McpToolset
+import google.auth
+from google.adk.tools.bigquery import BigQueryCredentialsConfig, BigQueryToolset
+from google.adk.tools.bigquery.config import BigQueryToolConfig, WriteMode
 from google.cloud import bigquery
 from vertexai import rag
 
@@ -78,14 +78,12 @@ def rag_response(query: str) -> str:
         return f"Error querying RAG corpus: {str(e)}"
 
 
-# Get toolbox URL from environment, default to local development
-TOOLBOX_URL = os.getenv("TOOLBOX_URL", "http://127.0.0.1:5000")
+# Use Application Default Credentials
+_credentials, _ = google.auth.default()
 
-# BQML toolset for executing SQL/BQML statements
-bqml_toolset = McpToolset(
-    connection_params=StreamableHTTPConnectionParams(
-        # MCP endpoint with BQML toolset filter
-        url=f"{TOOLBOX_URL}/mcp/bqml_toolset",
-        headers={}  # Add auth headers if needed
-    )
+# BQML toolset for executing SQL/BQML statements via ADK built-in BigQueryToolset
+# Write mode is allowed for BQML model creation and training
+bqml_toolset = BigQueryToolset(
+    credentials_config=BigQueryCredentialsConfig(credentials=_credentials),
+    bigquery_tool_config=BigQueryToolConfig(write_mode=WriteMode.ALLOWED),
 )
