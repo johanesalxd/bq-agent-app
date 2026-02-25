@@ -2,51 +2,26 @@
 Tools for BigQuery Multi-Agent Application
 
 This module provides:
-1. BigQuery toolset via MCP for database operations
+1. BigQuery toolset via ADK built-in BigQueryToolset (ADC) for database operations
 2. Data science agent wrapper for analysis with code execution
 """
 
-import os
-
+import google.auth
 from google.adk.tools import ToolContext
 from google.adk.tools.agent_tool import AgentTool
-from google.adk.tools.mcp_tool.mcp_session_manager import \
-    StreamableHTTPConnectionParams
-from google.adk.tools.mcp_tool.mcp_toolset import McpToolset
+from google.adk.tools.bigquery import BigQueryCredentialsConfig, BigQueryToolset
+from google.adk.tools.bigquery.config import BigQueryToolConfig, WriteMode
 
 from .sub_agents import ds_agent
 
-# Get toolbox URL from environment, default to local development
-TOOLBOX_URL = os.getenv("TOOLBOX_URL", "http://127.0.0.1:5000")
+# Use Application Default Credentials
+_credentials, _ = google.auth.default()
 
-# BigQuery tools via MCP toolbox
-# Use McpToolset with StreamableHTTPConnectionParams for proper MCP integration
-
-# Conversational toolset for quick insights and answers
-conversational_toolset = McpToolset(
-    connection_params=StreamableHTTPConnectionParams(
-        # MCP endpoint with toolset filter
-        url=f"{TOOLBOX_URL}/mcp/conversational_toolset",
-        headers={}  # Add auth headers if needed
-    )
-)
-
-# Data retrieval toolset for raw data extraction and analysis
-data_retrieval_toolset = McpToolset(
-    connection_params=StreamableHTTPConnectionParams(
-        # MCP endpoint with toolset filter
-        url=f"{TOOLBOX_URL}/mcp/data_retrieval_toolset",
-        headers={}  # Add auth headers if needed
-    )
-)
-
-# ML analysis toolset for forecasting and contribution analysis
-ml_analysis_toolset = McpToolset(
-    connection_params=StreamableHTTPConnectionParams(
-        # MCP endpoint with toolset filter
-        url=f"{TOOLBOX_URL}/mcp/ml_analysis_toolset",
-        headers={}  # Add auth headers if needed
-    )
+# Read-only BigQuery toolset (blocks write operations)
+# Replaces the three MCP toolsets: conversational, data_retrieval, ml_analysis
+bigquery_toolset = BigQueryToolset(
+    credentials_config=BigQueryCredentialsConfig(credentials=_credentials),
+    bigquery_tool_config=BigQueryToolConfig(write_mode=WriteMode.BLOCKED),
 )
 
 
@@ -89,8 +64,7 @@ async def call_data_science_agent(
 
     try:
         result = await agent_tool.run_async(
-            args={"request": full_request},
-            tool_context=tool_context
+            args={"request": full_request}, tool_context=tool_context
         )
         # Store result for potential use by other tools
         tool_context.state["ds_analysis_result"] = result

@@ -11,7 +11,7 @@ import os
 def return_instructions_bqml() -> str:
     """Return comprehensive instructions for the BQML agent."""
 
-    compute_project_id = os.getenv("BIGQUERY_PROJECT", "your-project-id")
+    compute_project_id = os.getenv("GOOGLE_CLOUD_PROJECT", "your-project-id")
 
     instruction_prompt_bqml = f"""
     <CONTEXT>

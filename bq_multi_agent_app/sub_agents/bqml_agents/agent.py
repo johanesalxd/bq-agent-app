@@ -14,12 +14,12 @@ from .tools import check_bq_models
 from .tools import rag_response
 
 root_agent = Agent(
-    model='gemini-2.5-flash',
+    model="gemini-3-flash-preview",
     name="bqml_agent",
     instruction=return_instructions_bqml(),
     tools=[
-        bqml_toolset,      # MCP toolset for BigQuery SQL/BQML execution
-        check_bq_models,   # List existing BQML models
-        rag_response,      # Query BQML documentation
+        bqml_toolset,  # MCP toolset for BigQuery SQL/BQML execution
+        check_bq_models,  # List existing BQML models
+        rag_response,  # Query BQML documentation
     ],
 )
