@@ -67,7 +67,7 @@ def return_instructions_root() -> str:
         - **Best for**: Users who have pre-configured BQ Data Agents (via BigQuery Studio or
           Conversational Analytics API) and want conversational access without writing SQL
         - **Note**: Data Agents are identified by full resource names in the format
-          'projects/{project}/locations/global/dataAgents/{agent_id}'
+          'projects/<PROJECT_ID>/locations/global/dataAgents/<AGENT_ID>'
         - **Routing criteria**: User mentions "data agent", "BQ data agent", "conversational analytics",
           "ask the data agent", or explicitly asks to query a named data agent resource
 
