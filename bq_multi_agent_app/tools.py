@@ -2,26 +2,46 @@
 Tools for BigQuery Multi-Agent Application
 
 This module provides:
-1. BigQuery toolset via ADK built-in BigQueryToolset (ADC) for database operations
-2. Data science agent wrapper for analysis with code execution
+1. BigQuery toolset via ADK built-in BigQueryToolset (user OAuth) for database operations
+2. Data Agent toolset via ADK DataAgentToolset (user OAuth) for conversational analytics
+3. Data science agent wrapper for analysis with code execution
 """
 
-import google.auth
+import os
+
 from google.adk.tools import ToolContext
 from google.adk.tools.agent_tool import AgentTool
 from google.adk.tools.bigquery import BigQueryCredentialsConfig, BigQueryToolset
 from google.adk.tools.bigquery.config import BigQueryToolConfig, WriteMode
+from google.adk.tools.data_agent.config import DataAgentToolConfig
+from google.adk.tools.data_agent.credentials import DataAgentCredentialsConfig
+from google.adk.tools.data_agent.data_agent_toolset import DataAgentToolset
 
 from .sub_agents import ds_agent
 
-# Use Application Default Credentials
-_credentials, _ = google.auth.default()
-
-# Read-only BigQuery toolset (blocks write operations)
-# Replaces the three MCP toolsets: conversational, data_retrieval, ml_analysis
+# Read-only BigQuery toolset using per-user OAuth.
+# Each user authenticates via Google OAuth consent screen on first BQ call;
+# the token is cached in session state under "bigquery_token_cache" and
+# reused (with automatic refresh) for subsequent calls within the same session.
+# This ensures BQ IAM permissions are enforced at the individual user level.
 bigquery_toolset = BigQueryToolset(
-    credentials_config=BigQueryCredentialsConfig(credentials=_credentials),
+    credentials_config=BigQueryCredentialsConfig(
+        client_id=os.environ["GOOGLE_OAUTH_CLIENT_ID"],
+        client_secret=os.environ["GOOGLE_OAUTH_CLIENT_SECRET"],
+    ),
     bigquery_tool_config=BigQueryToolConfig(write_mode=WriteMode.BLOCKED),
+)
+
+# Data Agent toolset backed by the Conversational Analytics API.
+# Uses per-user OAuth (same client credentials, separate token cache key
+# "data_agent_token_cache"). Provides access to pre-configured BQ Data Agents
+# for natural-language analytics without writing SQL.
+data_agent_toolset = DataAgentToolset(
+    credentials_config=DataAgentCredentialsConfig(
+        client_id=os.environ["GOOGLE_OAUTH_CLIENT_ID"],
+        client_secret=os.environ["GOOGLE_OAUTH_CLIENT_SECRET"],
+    ),
+    data_agent_tool_config=DataAgentToolConfig(max_query_result_rows=100),
 )
 
 

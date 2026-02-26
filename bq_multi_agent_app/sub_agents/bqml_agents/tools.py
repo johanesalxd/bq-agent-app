@@ -9,7 +9,6 @@ This module provides BQML-specific tools including:
 
 import os
 
-import google.auth
 from google.adk.tools.bigquery import BigQueryCredentialsConfig, BigQueryToolset
 from google.adk.tools.bigquery.config import BigQueryToolConfig, WriteMode
 from google.cloud import bigquery
@@ -78,12 +77,14 @@ def rag_response(query: str) -> str:
         return f"Error querying RAG corpus: {str(e)}"
 
 
-# Use Application Default Credentials
-_credentials, _ = google.auth.default()
-
-# BQML toolset for executing SQL/BQML statements via ADK built-in BigQueryToolset
-# Write mode is allowed for BQML model creation and training
+# BQML toolset using per-user OAuth.
+# Shares the "bigquery_token_cache" session state key with the root BigQueryToolset,
+# so the user authenticates only once for all BQ operations across both agents.
+# Write mode is allowed for BQML model creation and training.
 bqml_toolset = BigQueryToolset(
-    credentials_config=BigQueryCredentialsConfig(credentials=_credentials),
+    credentials_config=BigQueryCredentialsConfig(
+        client_id=os.environ["GOOGLE_OAUTH_CLIENT_ID"],
+        client_secret=os.environ["GOOGLE_OAUTH_CLIENT_SECRET"],
+    ),
     bigquery_tool_config=BigQueryToolConfig(write_mode=WriteMode.ALLOWED),
 )
