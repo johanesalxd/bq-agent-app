@@ -1,23 +1,42 @@
 """
 BigQuery Multi-Agent Application - Root Agent
 
-This is the main agent that orchestrates BigQuery data retrieval, data science analysis,
-and conversational analytics via BQ Data Agents. All BigQuery and Data Agent operations
-use per-user OAuth so that each user's IAM permissions are enforced transparently.
+CA API-first orchestration of BigQuery analytics, advanced data science,
+BigQuery ML, and conversational analytics via BQ Data Agents.
+
+All BigQuery and Data Agent operations use per-user OAuth so each user's
+IAM permissions are enforced transparently.
+
+Memory Bank (Vertex AI) provides cross-session conversation persistence when
+deployed to Agent Engine. Run locally with:
+    uv run adk web --memory_service_uri=agentengine://$AGENT_ENGINE_ID
 """
 
 from datetime import date
 
 from google.adk.agents import Agent
-from google.adk.tools import load_artifacts
+from google.adk.agents.callback_context import CallbackContext
+from google.adk.tools.preload_memory_tool import PreloadMemoryTool
+from google.adk.tools.load_memory_tool import LoadMemoryTool
 
 from .prompts import return_instructions_root
-from .sub_agents import bqml_agent
-from .tools import bigquery_toolset
-from .tools import call_data_science_agent
-from .tools import data_agent_toolset
+from .sub_agents import bqml_agent, ds_agent
+from .tools import ca_toolset, data_agent_toolset
 
 date_today = date.today()
+
+
+async def _generate_memories_callback(callback_context: CallbackContext) -> None:
+    """Generate memories from the most recent conversation events.
+
+    Called after each agent turn. Uses add_events_to_memory (incremental
+    processing) to avoid reprocessing events from prior turns.
+    """
+    await callback_context.add_events_to_memory(
+        events=callback_context.session.events[-5:-1]
+    )
+    return None
+
 
 root_agent = Agent(
     model="gemini-3-flash-preview",
@@ -36,11 +55,12 @@ root_agent = Agent(
         """
     ),
     instruction=return_instructions_root(),
-    sub_agents=[bqml_agent],
+    sub_agents=[ds_agent, bqml_agent],
     tools=[
-        bigquery_toolset,  # BigQuery analytics (read-only, per-user OAuth)
-        call_data_science_agent,  # Data science analysis with code execution
-        load_artifacts,  # Load local files for analysis
-        data_agent_toolset,  # Conversational Analytics API via BQ Data Agents (per-user OAuth)
+        ca_toolset,  # CA API + discovery tools (ask_data_insights, list/get dataset/table)
+        data_agent_toolset,  # Pre-configured BQ Data Agents via Conversational Analytics API
+        PreloadMemoryTool(),  # Auto-retrieves relevant memories at the start of each turn
+        LoadMemoryTool(),  # Model calls this explicitly to search memories mid-conversation
     ],
+    after_agent_callback=_generate_memories_callback,
 )

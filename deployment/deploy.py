@@ -92,6 +92,48 @@ def main() -> None:
         if val:
             runtime_env_vars[var] = val
 
+    # Memory Bank: 4 managed topics + 1 custom domain topic.
+    # Provides cross-session conversation persistence in Gemini Enterprise.
+    # PreloadMemoryTool and LoadMemoryTool in the agent read from this bank.
+    memory_bank_config = {
+        "customization_configs": [
+            {
+                "memory_topics": [
+                    {
+                        "managed_memory_topic": {
+                            "managed_topic_enum": "USER_PERSONAL_INFO"
+                        }
+                    },
+                    {
+                        "managed_memory_topic": {
+                            "managed_topic_enum": "USER_PREFERENCES"
+                        }
+                    },
+                    {
+                        "managed_memory_topic": {
+                            "managed_topic_enum": "KEY_CONVERSATION_DETAILS"
+                        }
+                    },
+                    {
+                        "managed_memory_topic": {
+                            "managed_topic_enum": "EXPLICIT_INSTRUCTIONS"
+                        }
+                    },
+                    {
+                        "custom_memory_topic": {
+                            "label": "data_analysis_context",
+                            "description": (
+                                "User's frequently used datasets, tables, preferred analysis "
+                                "patterns, domain-specific context about their data, and "
+                                "recurring analytical questions."
+                            ),
+                        }
+                    },
+                ]
+            }
+        ]
+    }
+
     deployed = agent_engines.create(
         agent_engine=adk_app,
         config={
@@ -100,6 +142,9 @@ def main() -> None:
                 "google-cloud-aiplatform[agent_engines,adk]",
             ],
             "env_vars": runtime_env_vars,
+            "context_spec": {
+                "memory_bank_config": memory_bank_config,
+            },
         },
     )
 

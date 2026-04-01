@@ -2,7 +2,7 @@
 Tests for prompt functions.
 
 Verifies that each prompt function returns a non-empty string and that
-critical routing keywords, workflow steps, and security constraints are
+critical routing sections, workflow steps, and security constraints are
 present. These act as regression guards against accidental deletion of
 key prompt sections.
 """
@@ -29,16 +29,16 @@ def test_root_instructions_returns_string(root_instructions):
     assert len(root_instructions) > 0
 
 
-def test_root_instructions_contain_all_execution_paths(root_instructions):
-    for path in ("PATH 1", "PATH 2", "PATH 3", "PATH 4", "PATH 5"):
-        assert path in root_instructions, f"Missing {path} in root instructions"
+def test_root_instructions_contain_all_routing_paths(root_instructions):
+    for path in ("DEFAULT PATH", "ADVANCED PATH", "BQML PATH", "DATA AGENT PATH"):
+        assert path in root_instructions, f"Missing '{path}' in root instructions"
 
 
 def test_root_instructions_contain_schema_first_approach(root_instructions):
     assert "SCHEMA-FIRST" in root_instructions or "schema" in root_instructions.lower()
 
 
-def test_root_instructions_contain_bqml_routing_keywords(root_instructions):
+def test_root_instructions_contain_bqml_routing(root_instructions):
     assert "bqml" in root_instructions.lower()
     assert (
         "sub-agent" in root_instructions.lower()
@@ -48,22 +48,30 @@ def test_root_instructions_contain_bqml_routing_keywords(root_instructions):
 
 def test_root_instructions_contain_data_agent_routing(root_instructions):
     assert "data agent" in root_instructions.lower()
-    assert "PATH 5" in root_instructions
 
 
-def test_root_instructions_contain_sql_safety_guidance(root_instructions):
-    assert "bigquery-execute-sql" in root_instructions
+def test_root_instructions_reference_ask_data_insights(root_instructions):
+    # Root agent uses ask_data_insights (CA API) — not bigquery-execute-sql.
+    assert "ask_data_insights" in root_instructions
+
+
+def test_root_instructions_do_not_reference_execute_sql_directly(root_instructions):
+    # execute_sql belongs to the DS sub-agent; root prompt should not call it.
+    assert "bigquery-execute-sql" not in root_instructions
 
 
 def test_root_instructions_no_check_bq_models_reference(root_instructions):
-    # check_bq_models was removed; root prompt must not reference it.
     assert "check_bq_models" not in root_instructions
 
 
 def test_root_instructions_contain_data_presentation_standards(root_instructions):
-    assert "DATA_PRESENTATION_STANDARDS" in root_instructions or (
-        "first 3" in root_instructions.lower() or "truncat" in root_instructions.lower()
-    )
+    lowered = root_instructions.lower()
+    assert "first 3" in lowered or "truncat" in lowered or "presentation" in lowered
+
+
+def test_root_instructions_describe_advanced_path_delegation(root_instructions):
+    lowered = root_instructions.lower()
+    assert "ds sub-agent" in lowered or "advanced" in lowered
 
 
 # ---------------------------------------------------------------------------
@@ -97,8 +105,6 @@ def test_bqml_instructions_contain_user_verification_requirement(bqml_instructio
 def test_bqml_instructions_contain_information_schema_for_model_listing(
     bqml_instructions,
 ):
-    # check_bq_models was removed; prompt must guide the agent to use
-    # INFORMATION_SCHEMA.MODELS instead.
     assert "INFORMATION_SCHEMA" in bqml_instructions
     assert "MODELS" in bqml_instructions
 
@@ -108,7 +114,6 @@ def test_bqml_instructions_no_check_bq_models_reference(bqml_instructions):
 
 
 def test_bqml_instructions_contain_compute_project(bqml_instructions):
-    # Prompt injects the project ID from env; verify the placeholder is replaced.
     assert (
         "your-project-id" not in bqml_instructions
         or os.getenv("GOOGLE_CLOUD_PROJECT", "") in bqml_instructions
@@ -154,7 +159,6 @@ def test_ds_instructions_contain_response_format_section(ds_instructions):
 
 
 def test_ds_instructions_contain_pip_install_constraint(ds_instructions):
-    # The prompt must forbid pip install to prevent code executor misuse.
     assert "pip install" in ds_instructions.lower()
     assert "forbidden" in ds_instructions.lower() or "never" in ds_instructions.lower()
 
@@ -167,3 +171,19 @@ def test_ds_instructions_contain_visualization_guidance(ds_instructions):
 def test_ds_instructions_contain_data_presentation_standards(ds_instructions):
     lowered = ds_instructions.lower()
     assert "first 3" in lowered or "truncat" in lowered or "sample" in lowered
+
+
+def test_ds_instructions_reference_own_bigquery_tools(ds_instructions):
+    # DS agent now has its own BigQuery toolset — prompt must reference the tools.
+    assert "bigquery-execute-sql" in ds_instructions or "execute_sql" in ds_instructions
+
+
+def test_ds_instructions_reference_schema_discovery(ds_instructions):
+    lowered = ds_instructions.lower()
+    assert "schema" in lowered or "discover" in lowered
+
+
+def test_ds_instructions_do_not_reference_parent_agent_data(ds_instructions):
+    # Old prompt referenced receiving data from "parent agent"; new prompt does
+    # not since DS agent queries BQ directly.
+    assert "parent agent" not in ds_instructions.lower()

@@ -1,29 +1,35 @@
 """
-Data Science Agent with Python code execution capabilities.
+Data Science Agent with Python code execution and BigQuery access.
 
 This agent uses VertexAiCodeExecutor to run pandas, matplotlib, and other
-data science libraries for analysis and visualization.
-
-Note: This agent must be wrapped as a tool (not used as sub-agent) to prevent
-function call interpretation errors.
+data science libraries. It also has its own filtered BigQueryToolset for
+direct SQL execution, forecasting, and anomaly detection — so it can query
+data independently without relying on the root agent to pass data in.
 """
 
 import os
 
 from google.adk.agents import Agent
 from google.adk.code_executors.vertex_ai_code_executor import VertexAiCodeExecutor
+from google.adk.tools import load_artifacts
 
 from .prompts import return_instructions_ds
+from ...tools import ds_toolset
 
 ds_agent = Agent(
     model="gemini-3-flash-preview",
     name="ds_agent",
     description=(
-        "Performs data science analysis with Python code execution using pandas, "
-        "matplotlib, numpy, and scipy. Produces visualizations, statistical analysis, "
-        "and actionable business insights from provided data."
+        "Performs advanced data science analysis with Python code execution and direct "
+        "BigQuery access. Uses pandas, matplotlib, numpy, scipy, and seaborn for "
+        "statistical analysis and visualization. Can run SQL queries, time-series "
+        "forecasting, contribution analysis, and anomaly detection directly on BQ tables."
     ),
     instruction=return_instructions_ds(),
+    tools=[
+        ds_toolset,  # Advanced BQ tools: execute_sql, forecast, analyze_contribution, etc.
+        load_artifacts,  # Load local files for analysis
+    ],
     code_executor=VertexAiCodeExecutor(
         optimize_data_file=False,
         stateful=False,

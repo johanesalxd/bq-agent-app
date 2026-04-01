@@ -38,26 +38,47 @@ def test_root_agent_model_is_set(root_agent):
     assert root_agent.model
 
 
+def test_root_agent_has_ds_sub_agent(root_agent):
+    sub_agent_names = [a.name for a in root_agent.sub_agents]
+    assert "ds_agent" in sub_agent_names
+
+
 def test_root_agent_has_bqml_sub_agent(root_agent):
     sub_agent_names = [a.name for a in root_agent.sub_agents]
     assert "bqml_agent" in sub_agent_names
 
 
-def test_root_agent_ds_agent_is_not_a_sub_agent(root_agent):
-    # DS agent must be tool-wrapped, not a sub-agent, to avoid code
-    # execution interpretation errors.
-    sub_agent_names = [a.name for a in root_agent.sub_agents]
-    assert "ds_agent" not in sub_agent_names
+def test_root_agent_has_exactly_two_sub_agents(root_agent):
+    assert len(root_agent.sub_agents) == 2
 
 
-def test_root_agent_has_exactly_one_sub_agent(root_agent):
-    assert len(root_agent.sub_agents) == 1
-
-
-def test_root_agent_tools_include_load_artifacts(root_agent):
-    # load_artifacts is the ADK built-in; confirm it is registered.
+def test_root_agent_has_ca_toolset(root_agent):
+    # ca_toolset is a BigQueryToolset instance; verify it is registered.
     tool_names = _tool_names(root_agent)
-    assert any("load_artifacts" in n for n in tool_names)
+    # BigQueryToolset str() representation contains "BigQueryToolset"
+    assert any("BigQuery" in n or "bigquery" in n.lower() for n in tool_names)
+
+
+def test_root_agent_has_preload_memory_tool(root_agent):
+    tool_names = _tool_names(root_agent)
+    assert any("memory" in n.lower() or "preload" in n.lower() for n in tool_names)
+
+
+def test_root_agent_has_load_memory_tool(root_agent):
+    tool_names = _tool_names(root_agent)
+    # Both PreloadMemoryTool and LoadMemoryTool should be present.
+    memory_tools = [n for n in tool_names if "memory" in n.lower()]
+    assert len(memory_tools) >= 2
+
+
+def test_root_agent_has_after_agent_callback(root_agent):
+    assert root_agent.after_agent_callback is not None
+
+
+def test_root_agent_does_not_have_load_artifacts_directly(root_agent):
+    # load_artifacts is now on the DS sub-agent, not the root agent.
+    tool_names = _tool_names(root_agent)
+    assert not any("load_artifacts" in n for n in tool_names)
 
 
 def test_root_agent_has_global_instruction(root_agent):
@@ -111,8 +132,7 @@ def test_bqml_agent_has_rag_response_tool(bqml_agent):
 
 
 def test_bqml_agent_does_not_have_check_bq_models(bqml_agent):
-    # check_bq_models was removed; model listing now goes through
-    # INFORMATION_SCHEMA via bqml_toolset.
+    # check_bq_models was removed; model listing goes through INFORMATION_SCHEMA.
     tool_names = _tool_names(bqml_agent)
     assert not any("check_bq_models" in n for n in tool_names)
 
@@ -160,9 +180,16 @@ def test_ds_agent_has_no_sub_agents(ds_agent):
     assert len(ds_agent.sub_agents) == 0
 
 
-def test_ds_agent_has_no_tools(ds_agent):
-    # DS agent relies entirely on code execution; tools list should be empty.
-    assert len(ds_agent.tools) == 0
+def test_ds_agent_has_ds_toolset(ds_agent):
+    # ds_toolset is a BigQueryToolset instance registered as a tool.
+    assert len(ds_agent.tools) > 0
+    tool_names = _tool_names(ds_agent)
+    assert any("BigQuery" in n or "bigquery" in n.lower() for n in tool_names)
+
+
+def test_ds_agent_has_load_artifacts(ds_agent):
+    tool_names = _tool_names(ds_agent)
+    assert any("load_artifacts" in n for n in tool_names)
 
 
 def test_ds_agent_has_instruction(ds_agent):
@@ -185,7 +212,6 @@ def _tool_names(agent) -> list[str]:
     names = []
     for tool in agent.tools:
         names.append(str(tool))
-        # Also capture __name__ when available (plain functions)
         if hasattr(tool, "__name__"):
             names.append(tool.__name__)
         if hasattr(tool, "name"):

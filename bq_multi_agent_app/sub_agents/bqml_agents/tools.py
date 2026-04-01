@@ -50,13 +50,22 @@ def rag_response(query: str) -> str:
 
 
 # BQML toolset using per-user OAuth.
-# Shares the "bigquery_token_cache" session state key with the root BigQueryToolset,
-# so the user authenticates only once for all BQ operations across both agents.
-# Write mode is allowed for BQML model creation and training.
+# Filtered to SQL execution and discovery tools only — the BQML agent does not
+# need ask_data_insights, forecast, analyze_contribution, or detect_anomalies.
+# Write mode is ALLOWED for CREATE MODEL, INSERT, and other DDL/DML statements.
+# Shares "bigquery_token_cache" with the root and DS toolsets so the user
+# authenticates only once for all BQ operations.
 bqml_toolset = BigQueryToolset(
     credentials_config=BigQueryCredentialsConfig(
         client_id=os.environ["GOOGLE_OAUTH_CLIENT_ID"],
         client_secret=os.environ["GOOGLE_OAUTH_CLIENT_SECRET"],
     ),
+    tool_filter=[
+        "execute_sql",
+        "list_dataset_ids",
+        "get_dataset_info",
+        "list_table_ids",
+        "get_table_info",
+    ],
     bigquery_tool_config=BigQueryToolConfig(write_mode=WriteMode.ALLOWED),
 )
