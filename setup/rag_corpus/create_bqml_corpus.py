@@ -78,33 +78,6 @@ def ingest_files(corpus_name):
     rag.list_files(corpus_name)
 
 
-def rag_response(query: str) -> str:
-    """Retrieves contextually relevant information from a RAG corpus.
-
-    Args:
-        query (str): The query string to search within the corpus.
-
-    Returns:
-        str: The response containing retrieved information from the corpus.
-    """
-    corpus_name = os.getenv("BQML_RAG_CORPUS_NAME")
-
-    rag_retrieval_config = rag.RagRetrievalConfig(
-        top_k=3,  # Optional
-        filter=rag.Filter(vector_distance_threshold=0.5),  # Optional
-    )
-    response = rag.retrieval_query(
-        rag_resources=[
-            rag.RagResource(
-                rag_corpus=corpus_name,
-            )
-        ],
-        text=query,
-        rag_retrieval_config=rag_retrieval_config,
-    )
-    return str(response)
-
-
 def write_to_env(corpus_name):
     """Writes the corpus name to the specified .env file.
 

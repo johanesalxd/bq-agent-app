@@ -16,7 +16,7 @@ def get_access_token() -> str:
             ["gcloud", "auth", "print-access-token"],
             capture_output=True,
             text=True,
-            check=True
+            check=True,
         )
         return result.stdout.strip()
     except subprocess.CalledProcessError as e:
@@ -31,12 +31,13 @@ def get_project_id() -> str:
             ["gcloud", "config", "get-value", "project"],
             capture_output=True,
             text=True,
-            check=True
+            check=True,
         )
         project_id = result.stdout.strip()
         if not project_id:
             print(
-                "No project ID found. Please set your project with: gcloud config set project PROJECT_ID")
+                "No project ID found. Please set your project with: gcloud config set project PROJECT_ID"
+            )
             sys.exit(1)
         return project_id
     except subprocess.CalledProcessError as e:
@@ -48,11 +49,16 @@ def get_project_number(project_id: str) -> str:
     """Get the project number from project ID."""
     try:
         result = subprocess.run(
-            ["gcloud", "projects", "describe", project_id,
-                "--format=value(projectNumber)"],
+            [
+                "gcloud",
+                "projects",
+                "describe",
+                project_id,
+                "--format=value(projectNumber)",
+            ],
             capture_output=True,
             text=True,
-            check=True
+            check=True,
         )
         return result.stdout.strip()
     except subprocess.CalledProcessError as e:
@@ -60,12 +66,22 @@ def get_project_number(project_id: str) -> str:
         sys.exit(1)
 
 
-def make_api_request(method: str, url: str, headers: Dict[str, str], data: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+def make_api_request(
+    method: str,
+    url: str,
+    headers: Dict[str, str],
+    data: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
     """Make an API request using curl."""
     curl_command = [
-        "curl", "-s", "-X", method,
-        "-H", f"Authorization: {headers['Authorization']}",
-        "-H", "Content-Type: application/json"
+        "curl",
+        "-s",
+        "-X",
+        method,
+        "-H",
+        f"Authorization: {headers['Authorization']}",
+        "-H",
+        "Content-Type: application/json",
     ]
 
     if data:
@@ -75,10 +91,7 @@ def make_api_request(method: str, url: str, headers: Dict[str, str], data: Optio
 
     try:
         result = subprocess.run(
-            curl_command,
-            capture_output=True,
-            text=True,
-            check=True
+            curl_command, capture_output=True, text=True, check=True
         )
 
         if result.stdout.strip():

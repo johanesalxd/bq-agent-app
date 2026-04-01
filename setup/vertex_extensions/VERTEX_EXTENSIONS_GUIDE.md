@@ -43,7 +43,7 @@ Add the extension resource name to your `.env` file:
 
 ```bash
 # Vertex AI Code Interpreter Extension
-CODE_INTERPRETER_EXTENSION_NAME=projects/605626490127/locations/us-central1/extensions/2132199061984378880
+CODE_INTERPRETER_EXTENSION_NAME=projects/your-project-number/locations/us-central1/extensions/your-extension-id
 ```
 
 ## Script Usage

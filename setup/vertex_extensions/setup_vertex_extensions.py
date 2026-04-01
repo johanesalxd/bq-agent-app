@@ -15,7 +15,9 @@ from utils import get_project_number
 from utils import make_api_request
 
 
-def create_code_interpreter_extension(project_id: str, region: str = "us-central1") -> Dict[str, Any]:
+def create_code_interpreter_extension(
+    project_id: str, region: str = "us-central1"
+) -> Dict[str, Any]:
     """Create a new Code Interpreter extension."""
     access_token = get_access_token()
     headers = {"Authorization": f"Bearer {access_token}"}
@@ -34,12 +36,10 @@ def create_code_interpreter_extension(project_id: str, region: str = "us-central
             },
             "authConfig": {
                 "authType": "GOOGLE_SERVICE_ACCOUNT_AUTH",
-                "googleServiceAccountConfig": {}
-            }
+                "googleServiceAccountConfig": {},
+            },
         },
-        "runtimeConfig": {
-            "codeInterpreterRuntimeConfig": {}
-        }
+        "runtimeConfig": {"codeInterpreterRuntimeConfig": {}},
     }
 
     print(f"Creating Code Interpreter extension in project {project_id}...")
@@ -72,15 +72,13 @@ def main():
 
     # Extract extension ID from the resource name
     extension_name = extension.get("name", "")
-    extension_id = extension_name.split(
-        "/")[-1] if extension_name else "Unknown"
+    extension_id = extension_name.split("/")[-1] if extension_name else "Unknown"
 
     print("\n✓ Extension created successfully!")
     print("\n" + "=" * 50)
     print("Copy this line to your .env file:")
     print("=" * 50)
-    print(
-        f"projects/{project_number}/locations/{region}/extensions/{extension_id}")
+    print(f"projects/{project_number}/locations/{region}/extensions/{extension_id}")
     print("=" * 50)
 
 
