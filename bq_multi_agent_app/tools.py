@@ -15,15 +15,18 @@ from google.adk.tools.data_agent.config import DataAgentToolConfig
 from google.adk.tools.data_agent.credentials import DataAgentCredentialsConfig
 from google.adk.tools.data_agent.data_agent_toolset import DataAgentToolset
 
-# Shared OAuth credentials for all BigQuery toolsets.
-# Each user authenticates via the Google OAuth consent screen on the first BQ
-# call; the token is cached in session state under "bigquery_token_cache" and
-# reused (with automatic refresh) within the same session.  All toolsets share
-# the same cache key so the user authenticates only once regardless of which
-# agent/toolset handles the request.
+# Session state key where Gemini Enterprise deposits the user's OAuth access token.
+# All toolsets read from this key on every tool call — no caching, no refresh attempt.
+# This bypasses the broken refresh flow (Gemini Enterprise issues access tokens only,
+# no refresh tokens) and ensures every call uses the latest token from the session.
+_AUTH_ID = os.getenv("AUTH_ID", "bq-oauth")
+
+# Shared credentials config for all BigQuery toolsets.
+# Uses external_access_token_key so the toolset reads the token directly from
+# tool_context.state[_AUTH_ID] on every invocation instead of managing OAuth
+# credentials (client_id/client_secret) and attempting token refresh.
 _bq_credentials = BigQueryCredentialsConfig(
-    client_id=os.environ["GOOGLE_OAUTH_CLIENT_ID"],
-    client_secret=os.environ["GOOGLE_OAUTH_CLIENT_SECRET"],
+    external_access_token_key=_AUTH_ID,
 )
 
 # Root agent: CA API + discovery tools (read-only).
@@ -65,12 +68,11 @@ ds_toolset = BigQueryToolset(
 
 # Pre-configured BQ Data Agents via Conversational Analytics API (per-user OAuth).
 # Provides access to Data Agents that users have created in BigQuery Studio.
-# Shares the same OAuth client credentials; uses "data_agent_token_cache" as
-# the session state key (separate from the BQ toolset token cache).
+# Uses external_access_token_key so the token is read fresh from session state
+# on every call — consistent with the BigQuery toolsets above.
 data_agent_toolset = DataAgentToolset(
     credentials_config=DataAgentCredentialsConfig(
-        client_id=os.environ["GOOGLE_OAUTH_CLIENT_ID"],
-        client_secret=os.environ["GOOGLE_OAUTH_CLIENT_SECRET"],
+        external_access_token_key=_AUTH_ID,
     ),
     data_agent_tool_config=DataAgentToolConfig(max_query_result_rows=100),
 )

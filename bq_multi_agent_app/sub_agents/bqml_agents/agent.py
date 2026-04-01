@@ -10,9 +10,7 @@ queries through bqml_toolset, ensuring per-user OAuth is enforced consistently.
 from google.adk.agents import Agent
 
 from .prompts import return_instructions_bqml
-from .tools import bqml_toolset
-from .tools import rag_response
-from ...auth import bridge_oauth_token
+from .tools import bqml_toolset, rag_response
 from ...constants import MODEL_NAME
 
 bqml_agent = Agent(
@@ -28,5 +26,4 @@ bqml_agent = Agent(
         bqml_toolset,  # BigQueryToolset for SQL/BQML execution with per-user OAuth
         rag_response,  # Query BQML documentation from RAG corpus
     ],
-    before_tool_callback=bridge_oauth_token,
 )

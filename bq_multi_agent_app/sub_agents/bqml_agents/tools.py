@@ -16,6 +16,9 @@ from google.adk.tools.bigquery import BigQueryCredentialsConfig, BigQueryToolset
 from google.adk.tools.bigquery.config import BigQueryToolConfig, WriteMode
 from vertexai import rag
 
+# Session state key where Gemini Enterprise deposits the user's OAuth access token.
+_AUTH_ID = os.getenv("AUTH_ID", "bq-oauth")
+
 logger = logging.getLogger(__name__)
 
 
@@ -57,12 +60,11 @@ def rag_response(query: str) -> str:
 # Filtered to SQL execution and discovery tools only — the BQML agent does not
 # need ask_data_insights, forecast, analyze_contribution, or detect_anomalies.
 # Write mode is ALLOWED for CREATE MODEL, INSERT, and other DDL/DML statements.
-# Shares "bigquery_token_cache" with the root and DS toolsets so the user
-# authenticates only once for all BQ operations.
+# Uses external_access_token_key so the token is read fresh from session state
+# on every call — no refresh attempt (Gemini Enterprise issues access tokens only).
 bqml_toolset = BigQueryToolset(
     credentials_config=BigQueryCredentialsConfig(
-        client_id=os.environ["GOOGLE_OAUTH_CLIENT_ID"],
-        client_secret=os.environ["GOOGLE_OAUTH_CLIENT_SECRET"],
+        external_access_token_key=_AUTH_ID,
     ),
     tool_filter=[
         "execute_sql",

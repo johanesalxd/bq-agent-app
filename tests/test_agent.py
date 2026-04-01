@@ -71,10 +71,6 @@ def test_root_agent_has_load_memory_tool(root_agent):
     assert len(memory_tools) >= 2
 
 
-def test_root_agent_has_before_tool_callback(root_agent):
-    assert root_agent.before_tool_callback is not None
-
-
 def test_root_agent_has_after_agent_callback(root_agent):
     assert root_agent.after_agent_callback is not None
 
@@ -145,10 +141,6 @@ def test_bqml_agent_does_not_have_check_bq_models(bqml_agent):
     assert not any("check_bq_models" in n for n in tool_names)
 
 
-def test_bqml_agent_has_before_tool_callback(bqml_agent):
-    assert bqml_agent.before_tool_callback is not None
-
-
 def test_bqml_agent_has_instruction(bqml_agent):
     assert bqml_agent.instruction
     assert len(bqml_agent.instruction) > 0
@@ -202,10 +194,6 @@ def test_ds_agent_has_ds_toolset(ds_agent):
 def test_ds_agent_has_load_artifacts(ds_agent):
     tool_names = _tool_names(ds_agent)
     assert any("load_artifacts" in n for n in tool_names)
-
-
-def test_ds_agent_has_before_tool_callback(ds_agent):
-    assert ds_agent.before_tool_callback is not None
 
 
 def test_ds_agent_has_instruction(ds_agent):

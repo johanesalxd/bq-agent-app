@@ -14,7 +14,6 @@ from google.adk.code_executors.vertex_ai_code_executor import VertexAiCodeExecut
 from google.adk.tools import load_artifacts
 
 from .prompts import return_instructions_ds
-from ...auth import bridge_oauth_token
 from ...constants import MODEL_NAME
 from ...tools import ds_toolset
 
@@ -32,7 +31,6 @@ ds_agent = Agent(
         ds_toolset,  # Advanced BQ tools: execute_sql, forecast, analyze_contribution, etc.
         load_artifacts,  # Load local files for analysis
     ],
-    before_tool_callback=bridge_oauth_token,
     code_executor=VertexAiCodeExecutor(
         optimize_data_file=False,
         stateful=False,

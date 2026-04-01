@@ -70,3 +70,42 @@ def test_bigquery_toolset_alias_is_removed():
     assert not hasattr(tools_module, "bigquery_toolset"), (
         "bigquery_toolset was renamed to ca_toolset; old name should be gone"
     )
+
+
+# ---------------------------------------------------------------------------
+# external_access_token_key — no client_id/client_secret on toolsets
+# ---------------------------------------------------------------------------
+
+
+def test_bq_credentials_uses_external_access_token_key():
+    from bq_multi_agent_app.tools import _bq_credentials
+
+    assert _bq_credentials.external_access_token_key == "bq-oauth", (
+        "_bq_credentials must use external_access_token_key, not client_id/client_secret"
+    )
+
+
+def test_bq_credentials_has_no_client_id():
+    from bq_multi_agent_app.tools import _bq_credentials
+
+    assert not getattr(_bq_credentials, "client_id", None), (
+        "_bq_credentials must not have client_id set"
+    )
+
+
+def test_data_agent_toolset_uses_external_access_token_key():
+    from bq_multi_agent_app.tools import data_agent_toolset
+
+    creds = data_agent_toolset._credentials_config
+    assert creds.external_access_token_key == "bq-oauth", (
+        "data_agent_toolset must use external_access_token_key"
+    )
+
+
+def test_bqml_toolset_uses_external_access_token_key():
+    from bq_multi_agent_app.sub_agents.bqml_agents.tools import bqml_toolset
+
+    creds = bqml_toolset._credentials_config
+    assert creds.external_access_token_key == "bq-oauth", (
+        "bqml_toolset must use external_access_token_key"
+    )
