@@ -1,30 +1,48 @@
 #!/usr/bin/env python3
 """
-Simple script to create a Vertex AI Code Interpreter extension.
+Create a Vertex AI Code Interpreter extension.
 
 Based on the official Google Cloud documentation:
 https://cloud.google.com/vertex-ai/generative-ai/docs/extensions/code-interpreter
+
+Usage:
+    uv run python setup/vertex_extensions/setup_vertex_extensions.py
 """
 
+import os
 import sys
-from typing import Any, Dict
+from typing import Any
 
-from utils import get_access_token
-from utils import get_project_id
-from utils import get_project_number
-from utils import make_api_request
+# Allow running from project root: add this script's directory to sys.path so
+# that "from utils import ..." resolves correctly regardless of working directory.
+sys.path.insert(0, os.path.dirname(__file__))
+
+from utils import get_access_token  # noqa: E402
+from utils import get_project_id  # noqa: E402
+from utils import get_project_number  # noqa: E402
+from utils import make_api_request  # noqa: E402
 
 
 def create_code_interpreter_extension(
     project_id: str, region: str = "us-central1"
-) -> Dict[str, Any]:
-    """Create a new Code Interpreter extension."""
+) -> dict[str, Any]:
+    """Create a new Code Interpreter extension.
+
+    Args:
+        project_id: GCP project ID.
+        region: GCP region (default: us-central1).
+
+    Returns:
+        The API response dict for the created extension.
+    """
     access_token = get_access_token()
     headers = {"Authorization": f"Bearer {access_token}"}
 
-    url = f"https://{region}-aiplatform.googleapis.com/v1beta1/projects/{project_id}/locations/{region}/extensions:import"
+    url = (
+        f"https://{region}-aiplatform.googleapis.com/v1beta1"
+        f"/projects/{project_id}/locations/{region}/extensions:import"
+    )
 
-    # Extension configuration
     extension_data = {
         "displayName": "Code Interpreter Extension",
         "description": "Code Interpreter for data analysis",
@@ -52,33 +70,33 @@ def create_code_interpreter_extension(
     return response
 
 
-def main():
-    """Main function to create extension and display info."""
+def main() -> None:
+    """Create a Code Interpreter extension and print the resource name."""
     print("Vertex AI Code Interpreter Extension Setup")
     print("=" * 50)
 
-    # Get project ID
     project_id = get_project_id()
     project_number = get_project_number(project_id)
     region = "us-central1"
 
-    print(f"Project ID: {project_id}")
+    print(f"Project ID    : {project_id}")
     print(f"Project Number: {project_number}")
-    print(f"Region: {region}")
+    print(f"Region        : {region}")
     print()
 
-    # Create the extension
     extension = create_code_interpreter_extension(project_id, region)
 
-    # Extract extension ID from the resource name
     extension_name = extension.get("name", "")
     extension_id = extension_name.split("/")[-1] if extension_name else "Unknown"
 
-    print("\n✓ Extension created successfully!")
+    print("\nExtension created successfully.")
     print("\n" + "=" * 50)
-    print("Copy this line to your .env file:")
+    print("Add this line to your .env file:")
     print("=" * 50)
-    print(f"projects/{project_number}/locations/{region}/extensions/{extension_id}")
+    print(
+        f"CODE_INTERPRETER_EXTENSION_NAME="
+        f"projects/{project_number}/locations/{region}/extensions/{extension_id}"
+    )
     print("=" * 50)
 
 

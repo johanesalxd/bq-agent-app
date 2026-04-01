@@ -1,188 +1,287 @@
-# BigQuery Agent with Google ADK
+# BigQuery Multi-Agent App
 
 A multi-agent system for BigQuery analytics and data science, built with the
-Google Agent Development Kit (ADK). Users interact in natural language; the
-agent handles dataset discovery, analytics via the Conversational Analytics API,
-advanced Python analysis, BigQuery ML operations, and conversational analytics
-via pre-configured BQ Data Agents.
+[Google Agent Development Kit (ADK)](https://google.github.io/adk-docs/). Users
+interact in natural language; the system handles schema discovery, analytics via
+the Conversational Analytics (CA) API, advanced Python analysis, BigQuery ML
+operations, and access to pre-configured BQ Data Agents.
 
 ## Quick Start
 
-**1. Authenticate**
 ```bash
+# 1. Authenticate
 gcloud auth application-default login
-```
 
-**2. Clone and install**
-```bash
+# 2. Clone and install
 git clone https://github.com/johanesalxd/bq-agent-app.git
 cd bq-agent-app
 uv sync
-```
 
-**3. Configure**
-```bash
+# 3. Configure
 cp .env.example .env
-# Required: set GOOGLE_CLOUD_PROJECT, GOOGLE_CLOUD_LOCATION,
-#           GOOGLE_OAUTH_CLIENT_ID, GOOGLE_OAUTH_CLIENT_SECRET
-```
+# Edit .env: set GOOGLE_CLOUD_PROJECT, GOOGLE_CLOUD_LOCATION,
+#            GOOGLE_OAUTH_CLIENT_ID, GOOGLE_OAUTH_CLIENT_SECRET
 
-**4. Run**
-```bash
+# 4. Run
 uv run adk web
 ```
 
+> **ADC note:** Do not set `GOOGLE_APPLICATION_CREDENTIALS`. The app uses
+> Application Default Credentials (ADC) via `gcloud auth application-default login`.
+> Setting `GOOGLE_APPLICATION_CREDENTIALS` to a service account key overrides ADC
+> and will cause auth failures for the per-user OAuth flows.
+
+---
+
 ## How It Works
 
-The root agent uses intent-based routing to send each request to the right tool
-or sub-agent. The vast majority of queries go through the **default path** using
-the Conversational Analytics (CA) API, which is the same backend powering
-BQ Agents and Looker Conversational Analytics.
+The root agent uses **intent-based routing** — it infers what the user needs from
+context, not keyword matching, and sends the request to the right tool or sub-agent.
 
 ```
 User: "Show me sales by region last month"
-→ Root agent infers: standard data question
-→ Calls ask_data_insights with table references
-→ Returns: data table + Vega-Lite chart (rendered natively in Gemini Enterprise)
+  -> Root agent: standard data question
+  -> Calls ask_data_insights with discovered table references
+  -> Returns data table + Vega-Lite chart (rendered natively in Gemini Enterprise)
 
-User: "Run a significance test comparing region performance"
-→ Root agent infers: statistical analysis, needs Python
-→ Delegates to DS sub-agent
-→ DS agent: execute_sql (get data) → Code Interpreter (scipy, statsmodels)
-→ Returns: statistical report + matplotlib charts
+User: "Run a significance test comparing region revenue"
+  -> Root agent: statistical analysis, needs Python
+  -> Delegates to DS sub-agent
+  -> DS agent: execute_sql (retrieve data) -> Code Interpreter (scipy, statsmodels)
+  -> Returns statistical report + matplotlib charts
 
 User: "Create a churn prediction model"
-→ Root agent infers: BQML task
-→ Delegates to BQML sub-agent
-→ BQML agent: RAG lookup → generate SQL → user approval → execute
+  -> Root agent: BQML task
+  -> Delegates to BQML sub-agent
+  -> BQML agent: RAG lookup -> generate SQL -> user approval -> execute
 
-User: "Ask my sales data agent about Q4 performance"
-→ Root agent infers: pre-configured Data Agent
-→ Uses DataAgentToolset → ask_data_agent
-→ Returns: CA API response from pre-configured agent
+User: "Ask my sales data agent about Q4"
+  -> Root agent: pre-configured Data Agent reference
+  -> Calls DataAgentToolset -> ask_data_agent
+  -> Returns CA API response from the user's pre-configured agent
 ```
 
-### Routing Logic (intent-based, not keyword-based)
+### Routing logic
 
-| Path | When | Tool/Agent |
-|------|------|-----------|
-| **Default** | Counts, aggregations, trends, comparisons, simple charts | `ask_data_insights` (CA API) |
-| **Advanced** | Statistical testing, custom Python, multi-step analysis | DS sub-agent |
-| **BQML** | ML model creation, training, evaluation, predictions | BQML sub-agent |
-| **Data Agent** | User references a pre-configured BQ Data Agent | `DataAgentToolset` |
+| Priority | Path | Trigger (inferred from intent) | Handler |
+|----------|------|-------------------------------|---------|
+| 1 | **Data Agent** | User explicitly references a named BQ Data Agent | `DataAgentToolset` |
+| 2 | **BQML** | ML model creation, training, evaluation, predictions | BQML sub-agent |
+| 3 | **Advanced** | Statistical testing, custom Python, forecasting, anomaly detection | DS sub-agent |
+| 4 | **Default** | Everything else — counts, aggregations, trends, comparisons, charts | `ask_data_insights` (CA API) |
+
+The **Default path** handles the vast majority of queries. `ask_data_insights` is
+the same backend that powers BQ Agents and Looker Conversational Analytics — it
+translates natural-language questions into SQL and returns Vega-Lite chart specs
+that render natively in Gemini Enterprise.
+
+---
 
 ## Architecture
 
 ```
-Root Agent (bigquery_ds_agent)
-├── BigQueryToolset [ca_toolset — CA API + discovery, read-only]
-│   Tools: ask_data_insights, list_dataset_ids, get_dataset_info,
-│          list_table_ids, get_table_info, search_catalog
+Root Agent  bigquery_ds_agent
 │
-├── DataAgentToolset [pre-configured BQ Data Agents, per-user OAuth]
-│   Tools: list_accessible_data_agents, get_data_agent_info, ask_data_agent
+├── BigQueryToolset  [ca_toolset — read-only, per-user OAuth]
+│   ask_data_insights  list_dataset_ids  get_dataset_info
+│   list_table_ids  get_table_info  search_catalog
 │
-├── Memory Tools [Vertex AI Memory Bank]
-│   Tools: PreloadMemoryTool, LoadMemoryTool
+├── DataAgentToolset  [per-user OAuth]
+│   list_accessible_data_agents  get_data_agent_info  ask_data_agent
 │
-└── Sub-agents:
-    ├── DS Sub-Agent (advanced analysis)
-    │   ├── BigQueryToolset [ds_toolset — advanced tools, read-only]
-    │   │   Tools: execute_sql, forecast, analyze_contribution,
-    │   │          detect_anomalies, list_dataset_ids, get_dataset_info,
-    │   │          list_table_ids, get_table_info, get_job_info
-    │   ├── Code Interpreter [VertexAiCodeExecutor]
-    │   │   Libs: matplotlib, numpy, pandas, scipy, seaborn, sklearn, statsmodels
+├── Memory Tools  [Vertex AI Memory Bank]
+│   PreloadMemoryTool  LoadMemoryTool
+│
+└── Sub-agents
+    │
+    ├── DS Sub-Agent  ds_agent
+    │   ├── BigQueryToolset  [ds_toolset — read-only, per-user OAuth]
+    │   │   execute_sql  forecast  analyze_contribution  detect_anomalies
+    │   │   list_dataset_ids  get_dataset_info  list_table_ids
+    │   │   get_table_info  get_job_info
+    │   ├── Code Interpreter  [VertexAiCodeExecutor]
+    │   │   Confirmed: numpy  pandas  matplotlib  scipy
+    │   │   (seaborn  sklearn  statsmodels  PIL — verify empirically)
     │   └── load_artifacts
     │
-    └── BQML Sub-Agent
-        ├── BigQueryToolset [bqml_toolset — SQL + discovery, write-enabled]
-        │   Tools: execute_sql, list_dataset_ids, get_dataset_info,
-        │          list_table_ids, get_table_info
-        └── RAG Response [BQML documentation corpus]
+    └── BQML Sub-Agent  bqml_agent
+        ├── BigQueryToolset  [bqml_toolset — write-enabled, per-user OAuth]
+        │   execute_sql  list_dataset_ids  get_dataset_info
+        │   list_table_ids  get_table_info
+        └── rag_response  [BQML documentation corpus]
 ```
 
-### Technology
+### Technology stack
 
 | Component | Details |
 |-----------|---------|
 | Framework | Google ADK 1.28+ |
 | Model | Gemini 3 Flash Preview |
-| CA API | `ask_data_insights` from `BigQueryToolset` — same backend as BQ Agents |
+| CA API | `ask_data_insights` — same backend as BQ Agents and Looker CA |
 | Auth | Per-user OAuth passthrough (BigQuery + Data Agents) |
-| Code execution | `VertexAiCodeExecutor` + Code Interpreter Extension |
+| Code execution | `VertexAiCodeExecutor` + pre-provisioned Code Interpreter Extension |
 | BQML docs | Vertex AI RAG corpus (`text-embedding-005`) |
 | Memory | Vertex AI Memory Bank via `PreloadMemoryTool` / `LoadMemoryTool` |
+
+---
 
 ## Prerequisites
 
 - Python 3.12
-- `uv` package manager ([install](https://docs.astral.sh/uv/getting-started/installation/))
+- [`uv`](https://docs.astral.sh/uv/getting-started/installation/) package manager
 - Google Cloud project with BigQuery enabled
-- Application Default Credentials (`gcloud auth application-default login`)
+- `gcloud` CLI authenticated: `gcloud auth application-default login`
 
-## BQML Agent Setup
-
-### Required APIs
+### Required GCP APIs
 
 ```bash
 gcloud services enable aiplatform.googleapis.com
 gcloud services enable bigquery.googleapis.com
 gcloud services enable cloudresourcemanager.googleapis.com
+gcloud services enable discoveryengine.googleapis.com  # Gemini Enterprise only
 ```
 
 ### Required IAM roles
 
-- Vertex AI User
-- BigQuery User
-- BigQuery Data Viewer
+| Role | Purpose |
+|------|---------|
+| Vertex AI User | Agent Engine, Code Interpreter, RAG |
+| BigQuery User | Query execution |
+| BigQuery Data Viewer | Table / schema access |
 
-### RAG Corpus
+---
 
-The BQML agent uses a Vertex AI RAG corpus for documentation lookup. Create it
-once and the corpus name is written to your `.env` automatically:
+## Setup
 
-```bash
-uv run python setup/rag_corpus/create_bqml_corpus.py
-```
+### 1. OAuth 2.0 client (required)
 
-Default region: `us-west4` (Vertex AI RAG capacity).
+BigQuery and Data Agent toolsets authenticate each user via OAuth. You need an
+OAuth 2.0 client registered in Google Cloud Console.
 
-### Code Interpreter Extension
+1. Cloud Console → APIs & Services → Credentials → **Create OAuth 2.0 Client ID**
+2. Application type: **Web application**
+3. Add authorised redirect URIs:
+   - Local ADK web UI: `http://localhost:8000/oauth2callback`
+   - Gemini Enterprise: `https://vertexaisearch.cloud.google.com/oauth-redirect`
+   - Gemini Enterprise: `https://vertexaisearch.cloud.google.com/static/oauth/oauth.html`
+4. Copy **Client ID** and **Client Secret** to `.env`:
+   ```bash
+   GOOGLE_OAUTH_CLIENT_ID=your-client-id.apps.googleusercontent.com
+   GOOGLE_OAUTH_CLIENT_SECRET=your-client-secret
+   ```
+
+### 2. Code Interpreter Extension (required for DS agent)
 
 `VertexAiCodeExecutor` requires a pre-provisioned Code Interpreter Extension.
-Set it up once and record the resource name in `.env`:
+Create one once and pin it in `.env` to prevent new extensions being created on
+every agent start.
 
 ```bash
-python setup/vertex_extensions/setup_vertex_extensions.py
+uv run python setup/vertex_extensions/setup_vertex_extensions.py
 # Copy the printed resource name to CODE_INTERPRETER_EXTENSION_NAME in .env
 ```
 
-See [Vertex Extensions Setup Guide](setup/vertex_extensions/VERTEX_EXTENSIONS_GUIDE.md)
-for cleanup and management.
+To clean up duplicate extensions:
 
-## Deployment
+```bash
+# Preview first
+uv run python setup/vertex_extensions/cleanup_vertex_extensions.py \
+    --dry-run --keep-id YOUR_EXTENSION_ID
 
-### Local development
+# Then delete
+uv run python setup/vertex_extensions/cleanup_vertex_extensions.py \
+    --keep-id YOUR_EXTENSION_ID
+```
+
+See [`setup/vertex_extensions/VERTEX_EXTENSIONS_GUIDE.md`](setup/vertex_extensions/VERTEX_EXTENSIONS_GUIDE.md)
+for full details.
+
+### 3. BQML RAG corpus (required for BQML agent)
+
+The BQML agent uses a Vertex AI RAG corpus for documentation lookup.
+
+```bash
+uv run python setup/rag_corpus/create_bqml_corpus.py
+# BQML_RAG_CORPUS_NAME is written to .env automatically
+```
+
+> **Region note:** The script defaults to `us-west4` (higher Vertex AI RAG quota
+> than `us-central1`). Override with `GOOGLE_CLOUD_LOCATION` if your project
+> supports RAG in your preferred region.
+
+---
+
+## Running Locally
 
 ```bash
 uv run adk web
 ```
 
-### Local development with Memory Bank
+### With Memory Bank
 
-Memory Bank requires an Agent Engine instance for storage. Deploy once to get
-the instance, then point your local run at it:
+Memory Bank persists conversation context across sessions. It requires a deployed
+Agent Engine instance as the backing store (see [Deployment](#deployment)).
 
 ```bash
-# 1. Deploy (see Agent Engine section below)
-uv run python deployment/deploy.py
+# After deploying, extract the numeric engine ID from AGENT_ENGINE_RESOURCE_NAME:
+# e.g. "projects/123/locations/us-central1/reasoningEngines/456789" -> 456789
+# Set AGENT_ENGINE_ID=456789 in .env, then:
 
-# 2. Copy the numeric ID from AGENT_ENGINE_RESOURCE_NAME to AGENT_ENGINE_ID in .env
-#    Example: "projects/123/locations/us-central1/reasoningEngines/456789" → 456789
-
-# 3. Run locally with Memory Bank
 uv run adk web --memory_service_uri=agentengine://$AGENT_ENGINE_ID
+```
+
+---
+
+## Deployment
+
+### Agent Engine (recommended)
+
+```bash
+# Set GCS_STAGING_BUCKET in .env, then:
+uv run python deployment/deploy.py
+```
+
+`deploy.py` configures Memory Bank automatically with 5 topics:
+
+| Topic | What is stored |
+|-------|---------------|
+| `USER_PERSONAL_INFO` | Team, role, organisational context |
+| `USER_PREFERENCES` | Chart style, analysis preferences, currency |
+| `KEY_CONVERSATION_DETAILS` | Milestones and conclusions from past sessions |
+| `EXPLICIT_INSTRUCTIONS` | Persistent user instructions |
+| `data_analysis_context` (custom) | Frequently used datasets, tables, domain context |
+
+After deployment, copy the printed resource name to `AGENT_ENGINE_RESOURCE_NAME`
+in `.env`.
+
+**Smoke test:**
+```bash
+uv run python deployment/test_deployment.py
+```
+
+**Session management via REST:**
+```bash
+ACCESS_TOKEN=$(gcloud auth print-access-token)
+
+# List sessions
+curl -s -H "Authorization: Bearer ${ACCESS_TOKEN}" \
+  "https://us-central1-aiplatform.googleapis.com/v1beta1/${AGENT_ENGINE_RESOURCE_NAME}/sessions"
+
+# Delete a session
+curl -s -X DELETE -H "Authorization: Bearer ${ACCESS_TOKEN}" \
+  "https://us-central1-aiplatform.googleapis.com/v1beta1/${AGENT_ENGINE_RESOURCE_NAME}/sessions/SESSION_ID"
+```
+
+### Gemini Enterprise
+
+After deploying to Agent Engine, register the agent to surface it in the Gemini
+Enterprise console. Gemini Enterprise renders Vega-Lite charts from
+`ask_data_insights` natively.
+
+```bash
+# Set GEMINI_ENTERPRISE_APP_ID and AGENT_ENGINE_RESOURCE_NAME in .env, then:
+chmod +x deployment/register_gemini_enterprise.sh
+./deployment/register_gemini_enterprise.sh
 ```
 
 ### Cloud Run
@@ -197,87 +296,41 @@ uv run adk deploy cloud_run \
   ./bq_multi_agent_app
 ```
 
-### Agent Engine (Python SDK)
-
-The canonical deployment path uses the `AdkApp` Python SDK wrapper.
-Memory Bank is configured automatically by `deploy.py`.
-
-```bash
-# Set GCS_STAGING_BUCKET in .env, then:
-uv run python deployment/deploy.py
-```
-
-The script prints the fully-qualified resource name. Copy it to
-`AGENT_ENGINE_RESOURCE_NAME` in `.env`.
-
-**Memory Bank topics configured at deployment:**
-- `USER_PERSONAL_INFO` — team, role, organizational context
-- `USER_PREFERENCES` — chart style, analysis preferences, currency
-- `KEY_CONVERSATION_DETAILS` — milestones and conclusions from past sessions
-- `EXPLICIT_INSTRUCTIONS` — persistent instructions ("always use sales_data dataset")
-- `data_analysis_context` (custom) — frequently used tables, domain context, recurring questions
-
-**Smoke test after deployment:**
-```bash
-uv run python deployment/test_deployment.py
-```
-
-**Manage sessions via REST:**
-```bash
-ACCESS_TOKEN=$(gcloud auth print-access-token)
-# List sessions
-curl -s -H "Authorization: Bearer $ACCESS_TOKEN" \
-  "https://us-central1-aiplatform.googleapis.com/v1beta1/$AGENT_ENGINE_RESOURCE_NAME/sessions"
-# Delete a session
-curl -s -X DELETE -H "Authorization: Bearer $ACCESS_TOKEN" \
-  "https://us-central1-aiplatform.googleapis.com/v1beta1/$AGENT_ENGINE_RESOURCE_NAME/sessions/SESSION_ID"
-```
-
-### Gemini Enterprise registration
-
-After deploying to Agent Engine, register the agent with Gemini Enterprise
-(formerly Agentspace) to surface it in the Gemini Enterprise console.
-Gemini Enterprise renders Vega-Lite chart specs from `ask_data_insights` natively.
-
-**OAuth setup (required first):**
-
-In Google Cloud Console → APIs & Services → Credentials → your OAuth 2.0 Client:
-add these authorised redirect URIs:
-- `https://vertexaisearch.cloud.google.com/oauth-redirect`
-- `https://vertexaisearch.cloud.google.com/static/oauth/oauth.html`
-
-**Register:**
-```bash
-# Set GEMINI_ENTERPRISE_APP_ID and AGENT_ENGINE_RESOURCE_NAME in .env, then:
-chmod +x deployment/register_gemini_enterprise.sh
-./deployment/register_gemini_enterprise.sh
-```
+---
 
 ## Example Interactions
 
-**Standard analytics (default path — CA API)**
+**Default path — CA API**
 ```
 "What datasets are available in my project?"
-"Show me the schema of the sales_data table"
-"Find the top 10 customers by revenue this year"
-"Show monthly sales trend as a bar chart"
+"Show me the schema of the sales table"
+"Top 10 customers by revenue this year"
+"Monthly sales trend as a bar chart"
 ```
 
-**Advanced analysis (DS sub-agent)**
+**Advanced path — DS sub-agent**
 ```
 "Compare revenue across regions with statistical significance testing"
-"Run anomaly detection on daily order counts"
-"Forecast sales for the next 30 days and plot confidence intervals"
-"Analyze contribution of each product category to revenue change"
+"Detect anomalies in daily order counts"
+"Forecast sales for the next 30 days with confidence intervals"
+"What drove the revenue change between Q3 and Q4?"
 ```
 
-**BigQuery ML (BQML sub-agent)**
+**BQML path**
 ```
-"Create a logistic regression model for customer churn prediction"
-"What BQML model types are available for forecasting?"
+"Create a logistic regression model for churn prediction"
 "List existing BQML models in my dataset"
 "Evaluate the churn model and show metrics"
+"Forecast with ARIMA_PLUS using the sales_data table"
 ```
+
+**Data Agent path**
+```
+"Ask my sales data agent about top products last quarter"
+"Which data agents do I have available?"
+```
+
+---
 
 ## Project Structure
 
@@ -286,24 +339,26 @@ bq-agent-app/
 ├── pyproject.toml
 ├── .env.example
 ├── bq_multi_agent_app/
-│   ├── agent.py                  # Root agent (Memory Bank, sub-agents, CA toolset)
+│   ├── __init__.py               # ADK discovery re-export
+│   ├── agent.py                  # Root agent: Memory Bank, sub-agents, ca_toolset
 │   ├── tools.py                  # ca_toolset, ds_toolset, data_agent_toolset
-│   ├── prompts.py                # Root agent instructions (intent-based routing)
+│   ├── prompts.py                # Root agent prompt (intent-based routing)
 │   └── sub_agents/
-│       ├── bqml_agents/          # BigQuery ML sub-agent
-│       │   ├── agent.py
+│       ├── __init__.py
+│       ├── bqml_agents/
+│       │   ├── agent.py          # BQML sub-agent
 │       │   ├── prompts.py
 │       │   └── tools.py          # bqml_toolset (execute_sql + discovery, write-enabled)
-│       └── ds_agents/            # Data Science sub-agent
-│           ├── agent.py          # ds_toolset + Code Interpreter + load_artifacts
+│       └── ds_agents/
+│           ├── agent.py          # DS sub-agent: ds_toolset + Code Interpreter
 │           └── prompts.py
 ├── deployment/
-│   ├── deploy.py                 # Agent Engine deployment with Memory Bank config
+│   ├── deploy.py                 # Agent Engine deployment + Memory Bank config
 │   ├── register_gemini_enterprise.sh
-│   └── test_deployment.py
+│   └── test_deployment.py        # Smoke test for deployed instance
 ├── setup/
 │   ├── rag_corpus/
-│   │   └── create_bqml_corpus.py
+│   │   └── create_bqml_corpus.py # Vertex AI RAG corpus provisioning
 │   └── vertex_extensions/
 │       ├── setup_vertex_extensions.py
 │       ├── cleanup_vertex_extensions.py
@@ -317,19 +372,23 @@ bq-agent-app/
     └── test_tools.py
 ```
 
+---
+
 ## Security
 
-- Root and DS toolsets are read-only (`WriteMode.BLOCKED`)
-- BQML toolset is write-enabled only for the BQML sub-agent (required for `CREATE MODEL`)
-- Per-user OAuth ensures each user's IAM permissions are enforced
-- Store credentials in `.env` (git-ignored); never hardcode secrets
-- Minimum required IAM roles only
+- Root and DS toolsets use `WriteMode.BLOCKED` (read-only)
+- BQML toolset uses `WriteMode.ALLOWED` (required for `CREATE MODEL`)
+- Per-user OAuth ensures each user's IAM permissions are enforced end-to-end
+- Store all credentials in `.env` (git-ignored); never hardcode secrets
+- Do not set `GOOGLE_APPLICATION_CREDENTIALS` — use ADC (`gcloud auth application-default login`)
+
+---
 
 ## Related Resources
 
 - [Google ADK Documentation](https://google.github.io/adk-docs/)
 - [ADK BigQuery Tools](https://google.github.io/adk-docs/integrations/bigquery/)
-- [BigQuery Documentation](https://cloud.google.com/bigquery/docs)
+- [BigQuery Conversational Analytics](https://cloud.google.com/bigquery/docs/conversational-analytics-overview)
 - [Vertex AI Agent Engine](https://cloud.google.com/vertex-ai/generative-ai/docs/agent-engine/overview)
 - [Gemini Enterprise](https://cloud.google.com/products/gemini/enterprise)
-- [Conversational Analytics API](https://cloud.google.com/bigquery/docs/conversational-analytics-overview)
+- [Vertex AI Memory Bank](https://cloud.google.com/vertex-ai/generative-ai/docs/agent-engine/memory-bank)

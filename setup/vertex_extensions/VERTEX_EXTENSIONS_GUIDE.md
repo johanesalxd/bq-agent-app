@@ -1,87 +1,75 @@
 # Vertex AI Code Interpreter Extensions Management Guide
 
-This guide explains how to manage Vertex AI Code Interpreter extensions to prevent duplicate extensions and properly configure your BigQuery Multi-Agent application.
+This guide explains how to manage Vertex AI Code Interpreter extensions to prevent
+duplicate extensions and properly configure the BigQuery Multi-Agent application.
 
 ## Problem
 
-The `VertexAiCodeExecutor` creates a new Code Interpreter extension every time it runs without a specified `resource_name`. This leads to multiple duplicate extensions and unnecessary resource usage.
+`VertexAiCodeExecutor` creates a new Code Interpreter extension every time it runs
+without a specified `resource_name`. This leads to duplicate extensions and
+unnecessary resource usage.
 
 ## Solution
 
-Use environment variables to specify which extension to use and scripts to manage extensions.
+Set `CODE_INTERPRETER_EXTENSION_NAME` in `.env` to reuse a single pre-provisioned
+extension. Use the scripts below to create and clean up extensions.
 
 ## Quick Start
 
-### 1. Create a New Extension
+### 1. Create a new extension
 
 ```bash
-python setup/vertex_extensions/setup_vertex_extensions.py
+uv run python setup/vertex_extensions/setup_vertex_extensions.py
 ```
 
-This will:
-- Create a new Code Interpreter extension
-- Print the extension resource name in the format: `projects/PROJECT_NUMBER/locations/REGION/extensions/EXTENSION_ID`
-- Tell you to copy this line to your `.env` file
+This creates a Code Interpreter extension and prints the resource name to copy
+into `.env` as `CODE_INTERPRETER_EXTENSION_NAME`.
 
-### 2. Clean Up Duplicate Extensions
+### 2. Clean up duplicate extensions
 
-Preview what will be deleted:
+Preview what will be deleted (safe — no changes made):
 
 ```bash
-python setup/vertex_extensions/cleanup_vertex_extensions.py --dry-run --keep-id YOUR_EXTENSION_ID
+uv run python setup/vertex_extensions/cleanup_vertex_extensions.py \
+    --dry-run --keep-id YOUR_EXTENSION_ID
 ```
 
-Delete duplicates (keeping the specified extension):
+Delete duplicates, keeping the specified extension:
 
 ```bash
-python setup/vertex_extensions/cleanup_vertex_extensions.py --keep-id YOUR_EXTENSION_ID
+uv run python setup/vertex_extensions/cleanup_vertex_extensions.py \
+    --keep-id YOUR_EXTENSION_ID
 ```
 
 ## Environment Configuration
 
-Add the extension resource name to your `.env` file:
-
 ```bash
-# Vertex AI Code Interpreter Extension
-CODE_INTERPRETER_EXTENSION_NAME=projects/your-project-number/locations/us-central1/extensions/your-extension-id
+# .env
+CODE_INTERPRETER_EXTENSION_NAME=projects/YOUR_PROJECT_NUMBER/locations/us-central1/extensions/YOUR_EXTENSION_ID
 ```
 
-## Script Usage
+## Script Reference
 
 ### setup_vertex_extensions.py
 
-**Command**: `python setup/vertex_extensions/setup_vertex_extensions.py`
+Creates a new Code Interpreter extension and prints the fully-qualified resource
+name for copying to `.env`.
 
-**What it does**:
-- Creates a new Code Interpreter extension
-- Gets your project number automatically
-- Prints the complete resource name for copying to `.env`
-
-**Based on**: [Google Cloud Code Interpreter Documentation](https://cloud.google.com/vertex-ai/generative-ai/docs/extensions/code-interpreter)
+Reference: [Google Cloud Code Interpreter Documentation](https://cloud.google.com/vertex-ai/generative-ai/docs/extensions/code-interpreter)
 
 ### cleanup_vertex_extensions.py
 
-**Commands**:
-- `python setup/vertex_extensions/cleanup_vertex_extensions.py --dry-run --keep-id EXTENSION_ID` - Preview cleanup
-- `python setup/vertex_extensions/cleanup_vertex_extensions.py --keep-id EXTENSION_ID` - Delete duplicates
+| Flag | Required | Description |
+|------|----------|-------------|
+| `--keep-id ID` | Yes | Numeric extension ID to preserve |
+| `--dry-run` | No | Preview changes without deleting |
 
-**What it does**:
-- Lists all Code Interpreter extensions (max. 100)
-- Keeps the specified extension ID
-- Deletes all other Code Interpreter extensions
+Lists all Code Interpreter extensions (up to 100 per page), keeps the specified ID,
+and deletes all others. Prompts for confirmation before deletion.
 
 ## Best Practices
 
-1. **Always use dry-run first**: Preview changes before executing cleanup
-2. **Keep the most recent extension**: Usually the one with the latest creation date
-3. **Set up environment variables**: Prevents creation of new extensions
-4. **Regular cleanup**: Periodically clean up unused extensions
-
-## Summary
-
-This solution provides:
-- ✅ Simple extension creation with `python setup/vertex_extensions/setup_vertex_extensions.py`
-- ✅ Easy cleanup with `python setup/vertex_extensions/cleanup_vertex_extensions.py --keep-id EXTENSION_ID`
-- ✅ Prevents duplicate extensions via environment variables
-- ✅ Safe dry-run options
-- ✅ Tool-based architecture for error prevention
+1. Always use `--dry-run` first to preview changes before executing cleanup.
+2. Set `CODE_INTERPRETER_EXTENSION_NAME` in `.env` to prevent new extensions from
+   being created on every agent start.
+3. Run cleanup periodically if multiple developers or runs have created extras.

@@ -29,57 +29,60 @@
 
 set -e
 
-# Load .env if present.
-if [[ -f "$(dirname "$0")/../.env" ]]; then
-    # shellcheck disable=SC1091
-    source "$(dirname "$0")/../.env"
-fi
+main() {
+    # Load .env if present.
+    if [[ -f "$(dirname "$0")/../.env" ]]; then
+        # shellcheck disable=SC1091
+        source "$(dirname "$0")/../.env"
+    fi
 
-PROJECT_ID="${GOOGLE_CLOUD_PROJECT:?GOOGLE_CLOUD_PROJECT is required}"
-LOCATION="${GOOGLE_CLOUD_LOCATION:-us-central1}"
-REASONING_ENGINE="${AGENT_ENGINE_RESOURCE_NAME:?AGENT_ENGINE_RESOURCE_NAME is required}"
-AS_APP="${GEMINI_ENTERPRISE_APP_ID:?GEMINI_ENTERPRISE_APP_ID is required}"
-DISPLAY_NAME="${AGENT_DISPLAY_NAME:-BigQuery Multi-Agent App}"
+    local project_id="${GOOGLE_CLOUD_PROJECT:?GOOGLE_CLOUD_PROJECT is required}"
+    local location="${GOOGLE_CLOUD_LOCATION:-us-central1}"
+    local reasoning_engine="${AGENT_ENGINE_RESOURCE_NAME:?AGENT_ENGINE_RESOURCE_NAME is required}"
+    local as_app="${GEMINI_ENTERPRISE_APP_ID:?GEMINI_ENTERPRISE_APP_ID is required}"
+    local display_name="${AGENT_DISPLAY_NAME:-BigQuery Multi-Agent App}"
 
-ACCESS_TOKEN="$(gcloud auth print-access-token)"
-PROJECT_NUMBER="$(gcloud projects describe "${PROJECT_ID}" --format='value(projectNumber)')"
+    local access_token
+    access_token="$(gcloud auth print-access-token)"
+    local project_number
+    project_number="$(gcloud projects describe "${project_id}" --format='value(projectNumber)')"
 
-echo "=== Registering Agent with Gemini Enterprise ==="
-echo "  Project    : ${PROJECT_ID} (${PROJECT_NUMBER})"
-echo "  Location   : ${LOCATION}"
-echo "  Engine     : ${REASONING_ENGINE}"
-echo "  App ID     : ${AS_APP}"
-echo "  Agent name : ${DISPLAY_NAME}"
-echo ""
+    echo "=== Registering Agent with Gemini Enterprise ==="
+    echo "  Project    : ${project_id} (${project_number})"
+    echo "  Location   : ${location}"
+    echo "  Engine     : ${reasoning_engine}"
+    echo "  App ID     : ${as_app}"
+    echo "  Agent name : ${display_name}"
+    echo ""
 
-REGISTER_URL="https://discoveryengine.googleapis.com/v1alpha/projects/${PROJECT_NUMBER}/locations/global/collections/default_collection/engines/${AS_APP}/assistants/default_assistant/agents"
+    local register_url
+    register_url="https://discoveryengine.googleapis.com/v1alpha/projects/${project_number}/locations/global/collections/default_collection/engines/${as_app}/assistants/default_assistant/agents"
 
-PAYLOAD="$(cat <<JSON
-{
-  "displayName": "${DISPLAY_NAME}",
-  "agentstoreAgentConfig": {
-    "vertexAiReasoningEngineId": "${REASONING_ENGINE}"
-  }
+    # Build JSON payload safely using printf to avoid special-character issues.
+    local payload
+    payload="$(printf '{"displayName":"%s","agentstoreAgentConfig":{"vertexAiReasoningEngineId":"%s"}}' \
+        "${display_name}" "${reasoning_engine}")"
+
+    local response
+    response="$(curl -s -X POST \
+        -H "Authorization: Bearer ${access_token}" \
+        -H "Content-Type: application/json" \
+        -d "${payload}" \
+        "${register_url}")"
+
+    echo "Response:"
+    echo "${response}" | python3 -m json.tool 2>/dev/null || echo "${response}"
+
+    if echo "${response}" | grep -q '"name"'; then
+        echo ""
+        echo "Agent registered successfully."
+        echo "View it in the Gemini Enterprise console:"
+        echo "  https://console.cloud.google.com/gen-app-builder/engines?project=${project_id}"
+    else
+        echo ""
+        echo "Registration may have failed -- check the response above."
+        exit 1
+    fi
 }
-JSON
-)"
 
-RESPONSE="$(curl -s -X POST \
-    -H "Authorization: Bearer ${ACCESS_TOKEN}" \
-    -H "Content-Type: application/json" \
-    -d "${PAYLOAD}" \
-    "${REGISTER_URL}")"
-
-echo "Response:"
-echo "${RESPONSE}" | python3 -m json.tool 2>/dev/null || echo "${RESPONSE}"
-
-if echo "${RESPONSE}" | grep -q '"name"'; then
-    echo ""
-    echo "Agent registered successfully."
-    echo "View it in the Gemini Enterprise console:"
-    echo "  https://console.cloud.google.com/gen-app-builder/engines?project=${PROJECT_ID}"
-else
-    echo ""
-    echo "Registration may have failed -- check the response above."
-    exit 1
-fi
+main "$@"

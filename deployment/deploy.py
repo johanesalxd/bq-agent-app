@@ -34,6 +34,11 @@ _REQUIRED_VARS = [
     "GOOGLE_CLOUD_PROJECT",
     "GOOGLE_CLOUD_LOCATION",
     "GCS_STAGING_BUCKET",
+    # OAuth credentials are read by tools.py at import time via os.environ[],
+    # so missing values produce a KeyError that crashes the deployed agent on
+    # every request. Treat them as required to catch this at deploy time.
+    "GOOGLE_OAUTH_CLIENT_ID",
+    "GOOGLE_OAUTH_CLIENT_SECRET",
 ]
 
 
@@ -77,14 +82,13 @@ def main() -> None:
         "GOOGLE_CLOUD_AGENT_ENGINE_ENABLE_TELEMETRY": "true",
         "OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT": "true",
     }
-    # Forward app-specific env vars if set.
+    # Forward all required vars (already validated above).
+    for var in _REQUIRED_VARS:
+        runtime_env_vars[var] = os.environ[var]
+    # Forward optional app-specific vars if set.
     _optional_env_vars = [
         "GOOGLE_GENAI_USE_VERTEXAI",
-        "GOOGLE_CLOUD_PROJECT",
-        "GOOGLE_CLOUD_LOCATION",
         "CODE_INTERPRETER_EXTENSION_NAME",
-        "GOOGLE_OAUTH_CLIENT_ID",
-        "GOOGLE_OAUTH_CLIENT_SECRET",
         "BQML_RAG_CORPUS_NAME",
     ]
     for var in _optional_env_vars:

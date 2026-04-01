@@ -1,8 +1,21 @@
 """
-Create and manage BQML RAG Corpus for BigQuery ML documentation.
+Create and manage the BQML RAG corpus for BigQuery ML documentation.
 
 This script creates a Vertex AI RAG corpus containing BQML documentation
 and reference guides for use by the BQML agent.
+
+Usage:
+    uv run python setup/rag_corpus/create_bqml_corpus.py
+
+On first run, creates the corpus and writes BQML_RAG_CORPUS_NAME to .env.
+On subsequent runs, skips creation and only re-imports files into the
+existing corpus.
+
+Note: Vertex AI RAG defaults to us-west4 when GOOGLE_CLOUD_LOCATION is
+not set. This is intentional -- us-west4 has higher RAG quota than
+us-central1. The rest of the infrastructure runs in us-central1.
+If you need the corpus in the same region, set GOOGLE_CLOUD_LOCATION
+to a region that supports both Vertex AI RAG and Agent Engine.
 """
 
 import os
@@ -13,31 +26,28 @@ from dotenv import set_key
 import vertexai
 from vertexai import rag
 
-# Define the path to the .env file
-env_file_path = Path(__file__).parent.parent.parent / ".env"
+# Path to repo root .env file.
+_ENV_FILE = Path(__file__).parent.parent.parent / ".env"
 
-# Load environment variables from the specified .env file
-load_dotenv(dotenv_path=env_file_path)
-
-PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT")
-# Default to us-west4 region (supports Vertex AI RAG)
-LOCATION = os.getenv("GOOGLE_CLOUD_LOCATION", "us-west4")
-corpus_name = os.getenv("BQML_RAG_CORPUS_NAME")
-
-display_name = "bqml_referenceguide_corpus"
-
-# Use Google's public BQML documentation
-paths = [
-    "gs://cloud-samples-data/adk-samples/data-science/bqml"
-]  # Supports Google Cloud Storage and Google Drive Links
-
-# Initialize Vertex AI API once per session
-vertexai.init(project=PROJECT_ID, location=LOCATION)
+# Public GCS bucket with BQML documentation files.
+_BQML_DOCS_PATH = "gs://cloud-samples-data/adk-samples/data-science/bqml"
 
 
-def create_RAG_corpus():
-    """Create RagCorpus with embedding model configuration."""
-    # Configure embedding model, for example "text-embedding-005".
+def create_rag_corpus(
+    project_id: str,
+    location: str,
+    display_name: str = "bqml_referenceguide_corpus",
+) -> str:
+    """Create a RAG corpus with the text-embedding-005 embedding model.
+
+    Args:
+        project_id: GCP project ID.
+        location: GCP region for the corpus.
+        display_name: Human-readable corpus name.
+
+    Returns:
+        The fully-qualified corpus resource name.
+    """
     embedding_model_config = rag.RagEmbeddingModelConfig(
         vertex_prediction_endpoint=rag.VertexPredictionEndpoint(
             publisher_model="publishers/google/models/text-embedding-005"
@@ -48,18 +58,21 @@ def create_RAG_corpus():
         rag_embedding_model_config=embedding_model_config
     )
 
-    bqml_corpus = rag.create_corpus(
+    corpus = rag.create_corpus(
         display_name=display_name,
         backend_config=backend_config,
     )
 
-    write_to_env(bqml_corpus.name)
+    _write_corpus_name_to_env(corpus.name)
+    return corpus.name
 
-    return bqml_corpus.name
 
+def ingest_files(corpus_name: str) -> None:
+    """Ingest BQML documentation files into the RAG corpus.
 
-def ingest_files(corpus_name):
-    """Ingest BQML documentation files into the RAG corpus."""
+    Args:
+        corpus_name: Fully-qualified corpus resource name.
+    """
     transformation_config = rag.TransformationConfig(
         chunking_config=rag.ChunkingConfig(
             chunk_size=512,
@@ -69,35 +82,42 @@ def ingest_files(corpus_name):
 
     rag.import_files(
         corpus_name,
-        paths,
-        transformation_config=transformation_config,  # Optional
-        max_embedding_requests_per_min=1000,  # Optional
+        [_BQML_DOCS_PATH],
+        transformation_config=transformation_config,
+        max_embedding_requests_per_min=1000,
     )
 
-    # List the files in the rag corpus
     rag.list_files(corpus_name)
 
 
-def write_to_env(corpus_name):
-    """Writes the corpus name to the specified .env file.
+def _write_corpus_name_to_env(corpus_name: str) -> None:
+    """Write the corpus resource name to the .env file.
 
     Args:
-        corpus_name: The name of the corpus to write.
+        corpus_name: Fully-qualified corpus resource name.
     """
-    load_dotenv(env_file_path)  # Load existing variables if any
-
-    # Set the key-value pair in the .env file
-    set_key(env_file_path, "BQML_RAG_CORPUS_NAME", corpus_name)
-    print(f"BQML_RAG_CORPUS_NAME '{corpus_name}' written to {env_file_path}")
+    load_dotenv(_ENV_FILE)
+    set_key(_ENV_FILE, "BQML_RAG_CORPUS_NAME", corpus_name)
+    print(f"BQML_RAG_CORPUS_NAME written to {_ENV_FILE}")
 
 
 if __name__ == "__main__":
-    # Check if corpus already exists
+    load_dotenv(dotenv_path=_ENV_FILE)
+
+    project_id = os.getenv("GOOGLE_CLOUD_PROJECT")
+    if not project_id:
+        raise RuntimeError("GOOGLE_CLOUD_PROJECT must be set in .env or environment.")
+
+    # Default to us-west4 (higher Vertex AI RAG quota than us-central1).
+    location = os.getenv("GOOGLE_CLOUD_LOCATION", "us-west4")
+
+    vertexai.init(project=project_id, location=location)
+
     corpus_name = os.getenv("BQML_RAG_CORPUS_NAME")
 
     if not corpus_name:
         print("Creating new BQML RAG corpus...")
-        corpus_name = create_RAG_corpus()
+        corpus_name = create_rag_corpus(project_id, location)
         print(f"Corpus created: {corpus_name}")
     else:
         print(f"Using existing corpus: {corpus_name}")
