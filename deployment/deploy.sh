@@ -7,7 +7,7 @@
 #
 # Prerequisites:
 #   - gcloud auth application-default login
-#   - .env file in repo root with GOOGLE_CLOUD_PROJECT, GOOGLE_CLOUD_AGENT_ENGINE_LOCATION,
+#   - .env file in repo root with GOOGLE_CLOUD_PROJECT, AGENT_ENGINE_REGION,
 #     GOOGLE_OAUTH_CLIENT_ID, GOOGLE_OAUTH_CLIENT_SECRET set
 #
 # Usage:
@@ -36,10 +36,11 @@ main() {
     fi
 
     local project="${GOOGLE_CLOUD_PROJECT:?GOOGLE_CLOUD_PROJECT is required in .env}"
-    # Use GOOGLE_CLOUD_AGENT_ENGINE_LOCATION for the deployment region.
-    # GOOGLE_CLOUD_LOCATION is set to "global" to enable Gemini 3 models via the
-    # global Vertex AI endpoint — it must NOT be used as the Agent Engine region.
-    local region="${GOOGLE_CLOUD_AGENT_ENGINE_LOCATION:-us-central1}"
+    # Use AGENT_ENGINE_REGION for the deployment region (not GOOGLE_CLOUD_LOCATION,
+    # which is set to "global" to route model calls to the Vertex AI global endpoint).
+    # GOOGLE_CLOUD_AGENT_ENGINE_* vars are reserved by Agent Engine and cannot be
+    # set via --env_file, so we use a plain AGENT_ENGINE_REGION var locally.
+    local region="${AGENT_ENGINE_REGION:-us-central1}"
 
     echo "=== Deploying BigQuery Multi-Agent App to Agent Engine ==="
     echo "  Project : ${project}"
