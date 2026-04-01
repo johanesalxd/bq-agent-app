@@ -11,8 +11,10 @@ respectively). Without bridging, every tool call returns:
     "User authorization is required to access Google services for <tool>."
 
 The bridge_oauth_token before_tool_callback copies the token from the Gemini
-Enterprise key to both ADK toolset cache keys on the first tool call, so all
-subsequent calls within the session use the cached token transparently.
+Enterprise key to both ADK toolset cache keys on every tool call. Always
+overwriting ensures that if Gemini Enterprise issues a new token mid-session
+(e.g. after the user re-authorizes with a wider scope), the toolsets pick it
+up immediately rather than continuing to use a stale cached token.
 
 This callback must be set on every agent (root and sub-agents) because ADK
 does not inherit before_tool_callback from parent to sub-agents.
@@ -53,8 +55,10 @@ async def bridge_oauth_token(
 
     Reads the access token placed by Gemini Enterprise at
     tool_context.state[AUTH_RESOURCE_ID] and writes a
-    google.oauth2.credentials.Credentials-compatible JSON entry to each ADK
-    toolset cache key that does not already have a token.
+    google.oauth2.credentials.Credentials-compatible JSON entry to both ADK
+    toolset cache keys on every tool call. Always overwriting ensures a new
+    token issued by Gemini Enterprise (e.g. after re-authorization with a
+    wider scope) is picked up immediately.
 
     Returns None in all cases so tool execution always proceeds normally.
 
@@ -95,17 +99,11 @@ async def bridge_oauth_token(
     )
 
     for cache_key in (_BQ_TOKEN_CACHE_KEY, _DA_TOKEN_CACHE_KEY):
-        if not tool_context.state.get(cache_key):
-            tool_context.state[cache_key] = token_json
-            logger.info(
-                "bridge_oauth_token: token bridged from '%s' to '%s'",
-                _AUTH_RESOURCE_ID,
-                cache_key,
-            )
-        else:
-            logger.debug(
-                "bridge_oauth_token: '%s' already populated, skipping",
-                cache_key,
-            )
+        tool_context.state[cache_key] = token_json
+        logger.debug(
+            "bridge_oauth_token: token written from '%s' to '%s'",
+            _AUTH_RESOURCE_ID,
+            cache_key,
+        )
 
     return None

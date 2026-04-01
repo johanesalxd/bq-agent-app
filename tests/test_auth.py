@@ -105,9 +105,14 @@ def test_bridge_skips_when_no_token():
     assert "data_agent_token_cache" not in state
 
 
-def test_bridge_does_not_overwrite_existing_cache():
-    """Existing token caches are not overwritten (preserves refresh tokens)."""
-    existing = json.dumps({"token": "existing-token", "refresh_token": "rt123"})
+def test_bridge_overwrites_existing_cache():
+    """Existing token caches are always overwritten with the latest token.
+
+    This ensures that if Gemini Enterprise issues a new token mid-session
+    (e.g. after the user re-authorizes with a wider scope), the toolsets
+    pick it up immediately rather than continuing to use a stale cached token.
+    """
+    existing = json.dumps({"token": "old-token", "refresh_token": "rt123"})
     state = {
         "bq-oauth": "ya29.new-token",
         "bigquery_token_cache": existing,
@@ -119,8 +124,8 @@ def test_bridge_does_not_overwrite_existing_cache():
 
     _run(bridge_oauth_token(tool=_make_tool(), args={}, tool_context=ctx))
 
-    assert json.loads(state["bigquery_token_cache"])["token"] == "existing-token"
-    assert json.loads(state["data_agent_token_cache"])["token"] == "existing-token"
+    assert json.loads(state["bigquery_token_cache"])["token"] == "ya29.new-token"
+    assert json.loads(state["data_agent_token_cache"])["token"] == "ya29.new-token"
 
 
 def test_bridge_token_json_is_valid_credentials_format():
