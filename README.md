@@ -6,25 +6,63 @@ interact in natural language; the system handles schema discovery, analytics via
 the Conversational Analytics (CA) API, advanced Python analysis, BigQuery ML
 operations, and access to pre-configured BQ Data Agents.
 
-## Quick Start
+## Agent Flow
+
+```mermaid
+flowchart TD
+    User([User Query]) --> Root[Root Agent\nbigquery_ds_agent]
+    Root --> S1[Schema Discovery\nlist_dataset_ids / get_table_info / search_catalog]
+    S1 --> S2{Route by Intent}
+
+    S2 ==> |"PATH D - DEFAULT\ncounts, aggs, trends\nrankings"| ADI[ask_data_insights\nCA API]
+    S2 ==> |"PATH C - ADVANCED\nstats, Python, forecast\ncharts, visualization"| DS[DS Sub-Agent\nds_agent]
+    S2 -.-> |"PATH A\nnamed BQ Data Agent"| DA[DataAgentToolset\nask_data_agent]
+    S2 -.-> |"PATH B\nML model ops"| BQML[BQML Sub-Agent\nbqml_agent]
+
+    ADI --> R_ADI([Data + Text Analysis\nNo Charts])
+
+    DS --> BQ_R[(BigQuery\nread-only)]
+    DS --> CI[Code Interpreter\npandas / matplotlib / scipy]
+    BQ_R --> CI
+    CI --> R_DS([Analysis + Charts\nmatplotlib images])
+
+    DA --> R_DA([Data + Text\nfrom BQ Data Agent])
+
+    BQML --> RAG[(RAG Corpus\nBQML Docs)]
+    BQML --> BQ_W[(BigQuery\nwrite-enabled)]
+    RAG --> R_BQML([SQL + Model Results\nuser approval required])
+    BQ_W --> R_BQML
+```
+
+Thick arrows (`==>`) indicate the two primary paths used for most requests.
+Dashed arrows (`-.->`) indicate special-purpose paths.
+
+---
+
+## Quick Deploy
 
 ```bash
 # 1. Authenticate
 gcloud auth application-default login
 
-# 2. Clone and install
+# 2. Clone, install, and configure
 git clone https://github.com/johanesalxd/bq-agent-app.git
-cd bq-agent-app
-uv sync
-
-# 3. Configure
+cd bq-agent-app && uv sync
 cp .env.example .env
 # Edit .env: set GOOGLE_CLOUD_PROJECT, AGENT_ENGINE_REGION,
-#            GOOGLE_OAUTH_CLIENT_ID, GOOGLE_OAUTH_CLIENT_SECRET
+#   GOOGLE_OAUTH_CLIENT_ID, GOOGLE_OAUTH_CLIENT_SECRET,
+#   CODE_INTERPRETER_EXTENSION_NAME, BQML_RAG_CORPUS_NAME
 
-# 4. Run
+# 3. Run locally
 uv run adk web
+
+# 4. Deploy to Agent Engine + register in Gemini Enterprise
+./deployment/deploy.sh
+./deployment/register_gemini_enterprise.sh
 ```
+
+> See [Setup](#setup) for prerequisite details (OAuth client, Code Interpreter
+> Extension, RAG corpus) and [Deployment](#deployment) for advanced options.
 
 > **ADC note:** Do not set `GOOGLE_APPLICATION_CREDENTIALS`. The app uses
 > Application Default Credentials (ADC) via `gcloud auth application-default login`.
@@ -72,7 +110,7 @@ User: "Ask order_user_agent about top customers"
 |----------|------|-------------------------------|---------|
 | 1 | **Data Agent** | User explicitly references a named BQ Data Agent | `DataAgentToolset` |
 | 2 | **BQML** | ML model creation, training, evaluation, predictions | BQML sub-agent |
-| 3 | **Advanced** | Statistical testing, custom Python, forecasting, anomaly detection | DS sub-agent |
+| 3 | **Advanced** | Statistical testing, custom Python, forecasting, anomaly detection, charts | DS sub-agent |
 | 4 | **Default** | Everything else — counts, aggregations, trends, comparisons (no charts) | `ask_data_insights` (CA API) |
 
 The **Default path** handles the vast majority of queries. `ask_data_insights` is
@@ -324,8 +362,7 @@ curl -s -X DELETE -H "Authorization: Bearer ${ACCESS_TOKEN}" \
 ### Gemini Enterprise
 
 After deploying to Agent Engine, register the agent to surface it in the Gemini
-Enterprise console. Gemini Enterprise renders Vega-Lite charts from
-`ask_data_insights` natively.
+Enterprise console.
 
 **Prerequisites:** `AGENT_ENGINE_RESOURCE_NAME` and `GEMINI_ENTERPRISE_APP_ID`
 must be set in `.env`. Find your app ID in the Gemini Enterprise console under
