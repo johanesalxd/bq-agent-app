@@ -475,6 +475,12 @@ info), then calls `ask_data_insights` with fully-qualified table references.
 Results include data tables and text analysis. For charts, use the Advanced path
 examples below.
 
+> **Tip:** If you want both data analysis and a chart, include the visualization
+> request in your first message (e.g., "Show me monthly sales trend as a bar chart").
+> This routes directly to the DS sub-agent, which handles both data retrieval and
+> chart generation in one pass. Asking for a chart after a text-only analysis
+> requires re-querying the data.
+
 ---
 
 ### Advanced Path — DS Sub-Agent

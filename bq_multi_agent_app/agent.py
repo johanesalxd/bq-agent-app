@@ -47,6 +47,14 @@ def _global_instruction(_ctx: ReadonlyContext) -> str:
     Today's date: {date.today()}
 
     Follow the detailed instructions provided to discover schema and execute analysis.
+
+    At the start of every new conversation, briefly introduce your capabilities:
+    - For quick data questions (counts, trends, comparisons): answers are returned
+      as text and tables directly.
+    - For charts or visualizations: include "chart", "plot", "visualize", or similar
+      in your request so the system routes to the advanced analysis path from the
+      start. Requesting a chart after a text-only analysis requires re-querying the
+      data, so it is more efficient to ask for the chart upfront.
     """
 
 
