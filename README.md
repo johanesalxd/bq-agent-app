@@ -121,9 +121,9 @@ Root Agent  bigquery_ds_agent
 | Component | Details |
 |-----------|---------|
 | Framework | Google ADK 1.28+ |
-| Model | Gemini 3 Flash Preview (`MODEL_NAME` in `agent.py`) |
+| Model | Gemini 3.1 Pro Preview — customtools variant (`MODEL_NAME` in `constants.py`) |
 | CA API | `ask_data_insights` — same backend as BQ Agents and Looker CA |
-| Auth | Per-user OAuth passthrough (BigQuery + Data Agents) |
+| Auth | Per-user OAuth via `external_access_token_key` — token read from session state on every tool call, no refresh attempt |
 | Code execution | `VertexAiCodeExecutor` + pre-provisioned Code Interpreter Extension |
 | BQML docs | Vertex AI RAG corpus (`text-embedding-005`, `us-west4`) |
 | Memory | Vertex AI Memory Bank via `PreloadMemoryTool` / `LoadMemoryTool` |
@@ -258,23 +258,34 @@ The app deploys to Vertex AI Agent Engine using the ADK CLI. Deploying from sour
 avoids serialization issues with `VertexAiCodeExecutor`.
 
 **Prerequisites:** Complete all Setup steps above and ensure `.env` has
-`GOOGLE_CLOUD_PROJECT`, `AGENT_ENGINE_REGION`, `GOOGLE_OAUTH_CLIENT_ID`,
-`GOOGLE_OAUTH_CLIENT_SECRET`, `CODE_INTERPRETER_EXTENSION_NAME`, and
-`BQML_RAG_CORPUS_NAME` set.
+`GOOGLE_CLOUD_PROJECT`, `AGENT_ENGINE_REGION`, `CODE_INTERPRETER_EXTENSION_NAME`,
+and `BQML_RAG_CORPUS_NAME` set.
+
+> **OAuth credentials in `.env`:** `GOOGLE_OAUTH_CLIENT_ID` and
+> `GOOGLE_OAUTH_CLIENT_SECRET` are **not** used by the deployed agent code — the
+> agent reads the user's OAuth token directly from session state via
+> `external_access_token_key`. These credentials are only needed by
+> `register_gemini_enterprise.sh` to create the Gemini Enterprise auth resource.
+> Keep them in `.env` so the registration script can find them.
 
 ```bash
 chmod +x deployment/deploy.sh
 ./deployment/deploy.sh
 ```
 
-After deployment completes, copy the resource name from the output to `.env`:
+`deploy.sh` writes `AGENT_ENGINE_RESOURCE_NAME` and `AGENT_ENGINE_ID` to `.env`
+automatically after a successful deployment.
 
-```
-AGENT_ENGINE_RESOURCE_NAME=projects/PROJECT_NUMBER/locations/REGION/reasoningEngines/ENGINE_ID
-AGENT_ENGINE_ID=ENGINE_ID
+**To deploy and delete the previous engine in one step:**
+
+```bash
+./deployment/deploy.sh --cleanup
 ```
 
-**To update an existing deployment:**
+This deploys the new engine, updates `.env`, then deletes the old engine
+(using `?force=true` to cascade-delete child sessions).
+
+**To update an existing deployment without creating a new engine:**
 
 ```bash
 ./deployment/deploy.sh --agent_engine_id=ENGINE_ID
@@ -611,7 +622,8 @@ bq-agent-app/
 ├── .env.example
 ├── bq_multi_agent_app/
 │   ├── __init__.py                    # ADK discovery re-export
-│   ├── agent.py                       # Root agent + MODEL_NAME constant
+│   ├── agent.py                       # Root agent definition
+│   ├── constants.py                   # MODEL_NAME and shared env setup
 │   ├── tools.py                       # ca_toolset, ds_toolset, data_agent_toolset
 │   ├── prompts.py                     # Root agent prompt (intent-based routing)
 │   ├── .agent_engine_config.json      # Memory Bank config for CLI deploy
@@ -656,6 +668,63 @@ bq-agent-app/
 - Store all credentials in `.env` (git-ignored); never hardcode secrets
 - Do not set `GOOGLE_APPLICATION_CREDENTIALS` — use ADC (`gcloud auth application-default login`)
 - `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=true` logs full prompt/response content; disable in environments with PII concerns
+
+---
+
+## Known Issues
+
+### Gemini Enterprise: Stale OAuth Token
+
+**Symptom:** The agent responds with credential errors on every tool call
+("trouble accessing the project due to a technical issue with my credentials",
+or "The credentials do not contain the necessary fields need to refresh the
+access token") even in brand-new sessions.
+
+**Root cause:** Gemini Enterprise caches OAuth grants server-side at the user
+level, keyed by the auth resource ID (`AUTH_ID`). When a previously-issued
+access token is revoked or expires, Gemini Enterprise may continue serving the
+same stale token to new sessions. The agent reads the token from session state
+via `external_access_token_key` on every tool call with no refresh attempt —
+so if the token in state is invalid, all BQ tool calls fail immediately.
+
+You can confirm a stale token by checking the session state and validating the
+token directly:
+
+```bash
+# Read the token from session state
+ACCESS_TOKEN=$(gcloud auth print-access-token)
+curl -s -H "Authorization: Bearer ${ACCESS_TOKEN}" \
+  "https://us-central1-aiplatform.googleapis.com/v1beta1/${AGENT_ENGINE_RESOURCE_NAME}/sessions/SESSION_ID" \
+  | python3 -c "import json,sys; s=json.load(sys.stdin); print(s['sessionState'].get('bq-oauth-3','NOT FOUND'))"
+
+# Check if the token is valid
+BQ_TOKEN="<token from above>"
+curl -s "https://www.googleapis.com/oauth2/v1/tokeninfo?access_token=${BQ_TOKEN}"
+# If output contains "error": "invalid_token" the token is stale
+```
+
+**Fix:** Create a new auth resource by changing `AUTH_ID` in `.env` to a new
+value, then redeploy and re-register. Gemini Enterprise has no cached grant for
+the new resource ID and will prompt the user for fresh consent.
+
+```bash
+# 1. Change AUTH_ID in .env (e.g. bq-oauth → bq-oauth-2)
+#    The value must be alphanumeric with hyphens; pick any new unique name.
+
+# 2. Redeploy (bakes the new AUTH_ID into the engine environment)
+./deployment/deploy.sh --cleanup
+
+# 3. Re-register (creates the new auth resource, deletes the old one)
+./deployment/register_gemini_enterprise.sh
+```
+
+After re-registering, start a new conversation in Gemini Enterprise. The first
+BigQuery tool call should trigger a fresh OAuth consent prompt.
+
+> **Why revoking the token doesn't help:** Revoking the token from
+> https://myaccount.google.com/permissions invalidates the token, but Gemini
+> Enterprise's server-side grant cache is not cleared. The next session receives
+> the same revoked token. Changing `AUTH_ID` is the reliable workaround.
 
 ---
 
