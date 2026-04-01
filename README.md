@@ -761,30 +761,53 @@ BigQuery tool call should trigger a fresh OAuth consent prompt.
 > Enterprise's server-side grant cache is not cleared. The next session receives
 > the same revoked token. Changing `AUTH_ID` is the reliable workaround.
 
-### ADK `ask_data_insights` Does Not Produce Charts
+### CA API Chart / Visualization Limitations
 
-**Symptom:** Visualization requests sent through `ask_data_insights` return only
-plain text data — no chart, no Vega-Lite spec — even when the user explicitly
-asks for a chart.
+The Conversational Analytics API supports Vega-Lite chart generation server-side.
+However, charts are blocked or lost at multiple levels depending on how you call
+the API and where you render the response.
 
-**Root cause:** The ADK `BigQueryToolset` implementation of `ask_data_insights`
-(`data_insights_tool.py`) hardcodes a `systemInstruction` that tells the CA API:
-"You are STRICTLY FORBIDDEN from generating any charts, graphs, images, or any
-other form of visualization." It also sets `options.chart.image.noImage: {}`.
-This is an intentional ADK design decision — the docstring explicitly states:
-"The final answer is always in plain text, as the underlying API is instructed
-not to generate any charts."
+**Tool comparison:**
 
-Note: The CA API itself *does* support Vega-Lite charts (line, bar, area,
-scatter, pie). The limitation is in the ADK tool wrapper, not the underlying API.
+| | ADK `ask_data_insights` (PATH D) | ADK `ask_data_agent` (PATH A) | Python SDK `DataChatServiceClient` |
+|---|---|---|---|
+| `noImage` API option | Yes — hardcoded | No | No |
+| Anti-chart system instruction | Yes — "STRICTLY FORBIDDEN" | No — uses the data agent's own instructions | No — caller controls instructions |
+| Chart response handler in ADK | None — silently dropped | None — silently dropped | N/A — caller parses the stream |
+| Returns Vega-Lite specs | No | No (API may return them; ADK discards) | Yes (`chart.result.vega_config`) |
+| Stateful multi-turn | No | No | Yes (conversation resource or message replay) |
+
+**Why charts don't reach the user — two independent blockers:**
+
+1. **ADK layer:** `ask_data_insights` actively suppresses charts via the
+   `options.chart.image.noImage` API option and a hardcoded system instruction.
+   `ask_data_agent` does not suppress them, but the ADK stream handler only
+   processes `text`, `schema`, and `data` message types — `chart` messages are
+   silently ignored regardless.
+2. **Gemini Enterprise layer:** Even if an ADK tool returned a Vega-Lite spec,
+   the GE web app has no mechanism to render charts from third-party ADK agents.
+   Google's built-in Data Insights agent renders charts through a first-party UI
+   integration that custom Agent Engine agents do not have access to. ADK agent
+   responses are rendered as text/markdown only.
+
+The Python SDK (`google-cloud-geminidataanalytics`) bypasses blocker 1 — it
+returns the full Vega-Lite spec. But blocker 2 remains: you can render the spec
+in a notebook (via Altair) or save it as a PNG, but you cannot display it inline
+in Gemini Enterprise from a custom agent.
 
 **How this system handles it:** Visualization requests are routed to PATH C (DS
-sub-agent), which uses Code Interpreter (matplotlib) to generate charts. This
-produces image artifacts that render in Gemini Enterprise and the ADK web UI.
+sub-agent), which queries BigQuery directly and generates charts via Code
+Interpreter (matplotlib). Code Interpreter produces image artifacts that Gemini
+Enterprise can display inline. This is why requesting a chart after a text-only
+analysis requires re-querying — the CA API result from PATH D cannot be passed
+to the DS sub-agent's Code Interpreter.
 
 **Reference:**
-- [CA API Known Limitations](https://cloud.google.com/gemini/docs/conversational-analytics-api/known-limitations)
-- ADK source: `google/adk/tools/bigquery/data_insights_tool.py` lines 138-153
+- [Render a visualization (Python SDK)](https://docs.cloud.google.com/gemini/data-agents/conversational-analytics-api/render-visualization)
+- [Build a data agent using the Python SDK](https://docs.cloud.google.com/gemini/data-agents/conversational-analytics-api/build-agent-sdk)
+- [CA API Known Limitations](https://docs.cloud.google.com/gemini/data-agents/conversational-analytics-api/known-limitations)
+- ADK source: `google/adk/tools/bigquery/data_insights_tool.py` (`noImage` + system instruction)
+- ADK source: `google/adk/tools/data_agent/data_agent_tool.py` (no `chart` message handler)
 
 ---
 
