@@ -16,9 +16,11 @@ from datetime import date
 
 from google.adk.agents import Agent
 from google.adk.agents.callback_context import CallbackContext
+from google.adk.agents.readonly_context import ReadonlyContext
 from google.adk.tools.preload_memory_tool import PreloadMemoryTool
 from google.adk.tools.load_memory_tool import LoadMemoryTool
 
+from .constants import MODEL_NAME
 from .prompts import return_instructions_root
 from .sub_agents import bqml_agent, ds_agent
 from .tools import ca_toolset, data_agent_toolset
@@ -38,7 +40,7 @@ async def _generate_memories_callback(callback_context: CallbackContext) -> None
     )
 
 
-def _global_instruction() -> str:
+def _global_instruction(_ctx: ReadonlyContext) -> str:
     """Build global instruction with current date (evaluated per-request)."""
     return f"""
     You are a Data Science and BigQuery Analytics Multi Agent System.
@@ -49,7 +51,7 @@ def _global_instruction() -> str:
 
 
 root_agent = Agent(
-    model="gemini-3-flash-preview",
+    model=MODEL_NAME,
     name="bigquery_ds_agent",
     description=(
         "Orchestrates BigQuery analytics, data science analysis, BigQuery ML operations, "

@@ -48,8 +48,8 @@ main() {
     uv run adk deploy agent_engine \
         --project="${project}" \
         --region="${region}" \
-        --display_name="BigQuery Multi-Agent App" \
-        --trace_to_cloud \
+        --display_name="${AGENT_DISPLAY_NAME:-BigQuery Multi-Agent App}" \
+        --otel_to_cloud \
         --env_file="${ENV_FILE}" \
         --agent_engine_config_file="${AGENT_DIR}/.agent_engine_config.json" \
         "$@" \

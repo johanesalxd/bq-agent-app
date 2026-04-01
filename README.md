@@ -60,8 +60,8 @@ User: "Create a churn prediction model"
   -> Delegates to BQML sub-agent
   -> BQML agent: RAG lookup -> generate SQL -> user approval -> execute
 
-User: "Ask my sales data agent about Q4"
-  -> Root agent: pre-configured Data Agent reference
+User: "Ask order_user_agent about top customers"
+  -> Root agent: pre-configured BQ Data Agent reference
   -> Calls DataAgentToolset -> ask_data_agent
   -> Returns CA API response from the user's pre-configured agent
 ```
@@ -121,7 +121,7 @@ Root Agent  bigquery_ds_agent
 | Component | Details |
 |-----------|---------|
 | Framework | Google ADK 1.28+ |
-| Model | Gemini 2.5 Flash Preview |
+| Model | Gemini 3 Flash Preview (`MODEL_NAME` in `agent.py`) |
 | CA API | `ask_data_insights` — same backend as BQ Agents and Looker CA |
 | Auth | Per-user OAuth passthrough (BigQuery + Data Agents) |
 | Code execution | `VertexAiCodeExecutor` + pre-provisioned Code Interpreter Extension |
@@ -143,6 +143,8 @@ Root Agent  bigquery_ds_agent
 gcloud services enable aiplatform.googleapis.com
 gcloud services enable bigquery.googleapis.com
 gcloud services enable cloudresourcemanager.googleapis.com
+gcloud services enable logging.googleapis.com        # For Agent Engine log ingestion
+gcloud services enable telemetry.googleapis.com      # For Agent Engine trace ingestion
 gcloud services enable discoveryengine.googleapis.com  # Gemini Enterprise only
 ```
 
@@ -153,6 +155,8 @@ gcloud services enable discoveryengine.googleapis.com  # Gemini Enterprise only
 | Vertex AI User | Agent Engine, Code Interpreter, RAG |
 | BigQuery User | Query execution |
 | BigQuery Data Viewer | Table / schema access |
+| Cloud Trace Agent (`roles/cloudtrace.agent`) | Write traces (telemetry) |
+| Logs Writer (`roles/logging.logWriter`) | Write logs (telemetry) |
 
 ---
 
@@ -238,6 +242,12 @@ Agent Engine instance as the backing store (see [Deployment](#deployment)).
 uv run adk web --memory_service_uri=agentengine://$AGENT_ENGINE_ID
 ```
 
+### With local telemetry (sends traces to Cloud Trace)
+
+```bash
+uv run adk web --otel_to_cloud
+```
+
 ---
 
 ## Deployment
@@ -264,6 +274,12 @@ AGENT_ENGINE_RESOURCE_NAME=projects/PROJECT_NUMBER/locations/REGION/reasoningEng
 AGENT_ENGINE_ID=ENGINE_ID
 ```
 
+**To update an existing deployment:**
+
+```bash
+./deployment/deploy.sh --agent_engine_id=ENGINE_ID
+```
+
 `deploy.sh` configures Memory Bank automatically with 5 topics:
 
 | Topic | What is stored |
@@ -273,12 +289,6 @@ AGENT_ENGINE_ID=ENGINE_ID
 | `KEY_CONVERSATION_DETAILS` | Milestones and conclusions from past sessions |
 | `EXPLICIT_INSTRUCTIONS` | Persistent user instructions |
 | `data_analysis_context` (custom) | Frequently used datasets, tables, domain context |
-
-**To update an existing deployment:**
-
-```bash
-./deployment/deploy.sh --agent_engine_id=ENGINE_ID
-```
 
 **Smoke test:**
 
@@ -338,36 +348,257 @@ uv run adk deploy cloud_run \
 
 ---
 
-## Example Interactions
+## Observability
 
-**Default path — CA API**
+Agent Engine provides two independent telemetry settings, both controlled via
+environment variables in `.env` and forwarded to the deployed container by
+`deploy.sh`.
+
+| Setting | Env Var | What it captures | PII risk |
+|---------|---------|-----------------|----------|
+| Traces + logs | `GOOGLE_CLOUD_AGENT_ENGINE_ENABLE_TELEMETRY=true` | Agent steps, tool calls, latency — no prompt content | Low |
+| Prompt/response capture | `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=true` | Full user messages and model responses in traces | **High** |
+
+Both are enabled by default in `.env`. To disable prompt capture (e.g. in
+production with PII concerns), comment out `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT`
+and redeploy.
+
+**Required APIs** (one-time):
+
+```bash
+gcloud services enable telemetry.googleapis.com
+gcloud services enable logging.googleapis.com
+```
+
+**Where to view:**
+
+- Agent Engine observability dashboard:
+  `console.cloud.google.com/vertex-ai/agents/agent-engines` → select your instance → **Observability**
+- Cloud Trace: `console.cloud.google.com/traces`
+- Cloud Logging (Logs Explorer): filter by resource type
+  `Vertex AI Agent Builder Reasoning Engine`
+
+**After changing telemetry settings**, redeploy to apply:
+
+```bash
+./deployment/deploy.sh --agent_engine_id=ENGINE_ID
+```
+
+**Local telemetry** (sends traces to Cloud Trace during `adk web`):
+
+```bash
+uv run adk web --otel_to_cloud
+```
+
+---
+
+## Usage Guide
+
+The examples below use the `thelook_ecommerce` dataset (orders, order_items,
+products, users, inventory_items, events, distribution_centers) as a reference.
+Adapt the table and dataset names to your own project.
+
+### Default Path — Conversational Analytics (CA API)
+
+The root agent handles most data questions directly via `ask_data_insights`.
+The CA API generates SQL internally — you do not need to write SQL.
+
+**Schema discovery**
+
 ```
 "What datasets are available in my project?"
-"Show me the schema of the sales table"
-"Top 10 customers by revenue this year"
-"Monthly sales trend as a bar chart"
+"Show me the tables in the thelook_ecommerce dataset"
+"What columns does the order_items table have?"
+"Find tables related to inventory"
 ```
 
-**Advanced path — DS sub-agent**
+**Aggregations and rankings**
+
 ```
-"Compare revenue across regions with statistical significance testing"
-"Detect anomalies in daily order counts"
-"Forecast sales for the next 30 days with confidence intervals"
-"What drove the revenue change between Q3 and Q4?"
+"How many orders were placed last month?"
+"Top 10 product categories by total revenue"
+"Average order value by customer country"
+"Which brands have the highest return rate?"
 ```
 
-**BQML path**
+**Trends and comparisons**
+
 ```
-"Create a logistic regression model for churn prediction"
-"List existing BQML models in my dataset"
-"Evaluate the churn model and show metrics"
-"Forecast with ARIMA_PLUS using the sales_data table"
+"Monthly order count trend for the past year as a line chart"
+"Compare revenue between Men's and Women's departments"
+"Show a bar chart of sales by product category for the top 15 categories"
+"What percentage of orders were returned vs completed last quarter?"
 ```
 
-**Data Agent path**
+The agent runs schema discovery first (list datasets → list tables → get table
+info), then calls `ask_data_insights` with fully-qualified table references.
+Results include data tables and Vega-Lite chart specs that render natively in
+Gemini Enterprise.
+
+---
+
+### Advanced Path — DS Sub-Agent
+
+Triggered when the request requires Python code execution, statistical testing,
+or advanced BigQuery tools (`forecast`, `analyze_contribution`, `detect_anomalies`).
+
+**Statistical analysis**
+
 ```
-"Ask my sales data agent about top products last quarter"
-"Which data agents do I have available?"
+"Is there a statistically significant difference in return rates between
+ product categories? Use the order_items and products tables."
+
+"What is the Pearson correlation between user age and average order value?"
+
+"Run a t-test comparing average sale prices in the Men's vs Women's
+ departments from the order_items and products tables."
+```
+
+**Advanced visualization**
+
+```
+"Create a heatmap of order counts by day of week and hour of day"
+
+"Plot the distribution of sale prices with a histogram and overlay a KDE curve"
+
+"Show a scatter plot of product cost vs retail price, coloured by department"
+```
+
+**Forecasting and anomaly detection**
+
+```
+"Forecast daily order counts for the next 30 days with 80% confidence intervals
+ using the orders table"
+
+"Detect anomalies in daily revenue over the past year from order_items"
+
+"What drove the change in revenue between Q1 and Q2?
+ Use the order_items table for contribution analysis."
+```
+
+**Multi-step analysis**
+
+```
+"Calculate customer lifetime value from order_items:
+ total spend, order count, and average days between orders per user.
+ Then segment users into Bronze / Silver / Gold tiers."
+
+"Cohort analysis: for users who placed their first order each month,
+ what fraction placed a second order within 30 days?"
+```
+
+The DS agent has its own BigQuery tools and Code Interpreter with numpy, pandas,
+matplotlib, scipy, seaborn, scikit-learn, and statsmodels pre-installed.
+
+---
+
+### BQML Path — BQML Sub-Agent
+
+Triggered for BigQuery ML model operations. The agent looks up BQML syntax from
+the RAG corpus, generates SQL, and asks for user approval before executing.
+Model training can take several minutes to hours.
+
+**Model creation**
+
+```
+"Create a logistic regression model to predict order returns.
+ Use the order_items and products tables in thelook_ecommerce."
+
+"Build an ARIMA_PLUS forecasting model for daily order counts
+ using the orders table. Use 'created_at' as the timestamp column."
+
+"Create a k-means clustering model with 4 clusters to segment users
+ by age, country, and total lifetime spend."
+```
+
+**Model inspection**
+
+```
+"List all BQML models in the thelook_ecommerce dataset"
+"Show training info for my logistic regression model"
+"Evaluate the return prediction model — show accuracy, precision, and recall"
+"What features does the clustering model use?"
+```
+
+**Predictions**
+
+```
+"Use the return prediction model to score the 100 most recent orders"
+"Forecast daily orders for the next 14 days using the ARIMA model"
+"Run ML.PREDICT on the k-means model and show which cluster each user falls into"
+```
+
+The agent always presents generated SQL for approval before execution. INFORMATION_SCHEMA
+queries and data exploration do not require approval.
+
+---
+
+### Data Agent Path — Pre-configured BQ Data Agents
+
+Triggered when the user explicitly references a named BQ Data Agent by name.
+These are agents created in the BigQuery console (BQ Agents / Conversational Analytics).
+
+**Discovering available agents**
+
+```
+"Which data agents do I have access to?"
+"List my available BQ data agents"
+```
+
+**Querying a specific agent**
+
+```
+"Ask order_user_agent about the top 10 customers by revenue last quarter"
+"Ask inventory_product_agent which products are running low on stock"
+"Ask order_user_agent what is the average order value by country this month"
+"Ask inventory_product_agent to show me the distribution of products by category"
+```
+
+Data Agents are identified by resource names of the form
+`projects/<PROJECT_ID>/locations/global/dataAgents/<AGENT_ID>`. The root agent
+resolves friendly names automatically via `list_accessible_data_agents`.
+
+No code changes are needed to use your `order_user_agent` and
+`inventory_product_agent` — they are accessible as long as they exist in the
+same GCP project and the user has IAM access.
+
+---
+
+### Memory Bank
+
+When running with Memory Bank (requires Agent Engine deployment), the agent
+remembers context across sessions automatically.
+
+**What gets stored across sessions:**
+
+| Memory topic | What it captures |
+|---|---|
+| `USER_PERSONAL_INFO` | Your team, role, organisational context |
+| `USER_PREFERENCES` | Preferred chart types, analysis style, currency |
+| `KEY_CONVERSATION_DETAILS` | Past analysis conclusions and milestones |
+| `EXPLICIT_INSTRUCTIONS` | Persistent instructions you give the agent |
+| `data_analysis_context` | Frequently used datasets, tables, domain context |
+
+**Telling the agent what to remember:**
+
+```
+"Remember that I always work with the thelook_ecommerce dataset"
+"My team focuses on the Women's Apparel department"
+"I prefer bar charts over pie charts"
+"Always show results in USD"
+```
+
+**How it works across sessions:**
+
+```
+Session 1:
+  You: "Remember I focus on the Women's department in thelook_ecommerce"
+  Agent: stores in memory
+
+Session 2 (new conversation):
+  You: "Show me this month's sales trend"
+  Agent: (recalls Women's department + thelook_ecommerce context automatically)
+       -> filters results to Women's department without being told
 ```
 
 ---
@@ -380,7 +611,7 @@ bq-agent-app/
 ├── .env.example
 ├── bq_multi_agent_app/
 │   ├── __init__.py                    # ADK discovery re-export
-│   ├── agent.py                       # Root agent: Memory Bank, sub-agents, ca_toolset
+│   ├── agent.py                       # Root agent + MODEL_NAME constant
 │   ├── tools.py                       # ca_toolset, ds_toolset, data_agent_toolset
 │   ├── prompts.py                     # Root agent prompt (intent-based routing)
 │   ├── .agent_engine_config.json      # Memory Bank config for CLI deploy
@@ -424,6 +655,7 @@ bq-agent-app/
 - Per-user OAuth ensures each user's IAM permissions are enforced end-to-end
 - Store all credentials in `.env` (git-ignored); never hardcode secrets
 - Do not set `GOOGLE_APPLICATION_CREDENTIALS` — use ADC (`gcloud auth application-default login`)
+- `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=true` logs full prompt/response content; disable in environments with PII concerns
 
 ---
 
@@ -433,5 +665,6 @@ bq-agent-app/
 - [ADK BigQuery Tools](https://google.github.io/adk-docs/integrations/bigquery/)
 - [BigQuery Conversational Analytics](https://cloud.google.com/bigquery/docs/conversational-analytics-overview)
 - [Vertex AI Agent Engine](https://cloud.google.com/vertex-ai/generative-ai/docs/agent-engine/overview)
+- [Agent Engine Observability](https://cloud.google.com/agent-builder/agent-engine/manage/tracing)
 - [Gemini Enterprise](https://cloud.google.com/products/gemini/enterprise)
 - [Vertex AI Memory Bank](https://cloud.google.com/vertex-ai/generative-ai/docs/agent-engine/memory-bank)

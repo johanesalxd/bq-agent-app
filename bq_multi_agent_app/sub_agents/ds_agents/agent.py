@@ -14,10 +14,11 @@ from google.adk.code_executors.vertex_ai_code_executor import VertexAiCodeExecut
 from google.adk.tools import load_artifacts
 
 from .prompts import return_instructions_ds
+from ...constants import MODEL_NAME
 from ...tools import ds_toolset
 
 ds_agent = Agent(
-    model="gemini-3-flash-preview",
+    model=MODEL_NAME,
     name="ds_agent",
     description=(
         "Performs advanced data science analysis with Python code execution and direct "

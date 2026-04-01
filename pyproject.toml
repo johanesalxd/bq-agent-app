@@ -7,10 +7,7 @@ dependencies = [
     "google-adk>=1.28.0",
     "google-auth>=2.0.0",
     "google-cloud-aiplatform>=1.143.0",
-    "numpy>=2.4.4",
-    "pandas>=3.0.1",
     "python-dotenv>=1.2.2",
-    "vertexai>=1.43.0",
 ]
 
 [dependency-groups]
@@ -22,6 +19,12 @@ dev = [
 [build-system]
 requires = ["uv_build>=0.7.19,<0.8.0"]
 build-backend = "uv_build"
+
+[tool.uv]
+environments = [
+    "sys_platform == 'darwin'",
+    "sys_platform == 'linux'",
+]
 
 [tool.uv.build-backend]
 module-name = "bq_multi_agent_app"

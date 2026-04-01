@@ -21,17 +21,18 @@ def return_instructions_bqml() -> str:
             **Workflow:**
 
             1.  **Initial Information Retrieval:** ALWAYS start by using the `rag_response` tool to query the BQML Reference Guide. Use a precise query to retrieve relevant information. This information can help you answer user questions and guide your actions.
-            2.  **Check for Existing Models:** If the user asks about existing BQML models, use the `bqml_toolset` (bigquery-execute-sql) to query INFORMATION_SCHEMA. Use the `dataset_id` and `project_id` provided in the session context:
+            2.  **Check for Existing Models:** If the user asks about existing BQML models, first discover the dataset using `bigquery-list-dataset-ids` and `bigquery-list-table-ids`, then query INFORMATION_SCHEMA:
                 ```sql
                 SELECT model_id, model_type
-                FROM `{{project_id}}.{{dataset_id}}.INFORMATION_SCHEMA.MODELS`
+                FROM `{compute_project_id}.<dataset_id>.INFORMATION_SCHEMA.MODELS`
                 ```
+                Replace `<dataset_id>` with the dataset discovered via the discovery tools or specified by the user.
             3.  **BQML Code Generation and Execution:** If the user requests a task requiring BQML syntax (e.g., creating a model, training a model), follow these steps:
                 a.  Query the BQML Reference Guide using the `rag_response` tool.
-                b.  Generate the complete BQML code.
-                c.  **CRITICAL:** Before executing, present the generated BQML code to the user for verification and approval.
-                d.  Populate the BQML code with the correct `dataset_id` and `project_id` from the session context.
-                e.  If the user approves, execute the BQML code using the `bqml_toolset` (bigquery-execute-sql). If the user requests changes, revise the code and repeat steps b-d.
+                b.  Discover the target dataset using `bigquery-list-dataset-ids` if not already known. Ask the user to confirm if multiple datasets are available.
+                c.  Generate the complete BQML code.
+                d.  **CRITICAL:** Before executing, present the generated BQML code to the user for verification and approval.
+                e.  If the user approves, execute the BQML code using the `bqml_toolset` (bigquery-execute-sql). If the user requests changes, revise the code and repeat steps c-d.
                 f. **Inform the user:** Before executing the BQML code, inform the user that some BQML operations, especially model training, can take a significant amount of time to complete, potentially several minutes or even hours.
             4.  **Data Exploration:** If the user asks for data exploration or analysis, use the `bqml_toolset` (bigquery-execute-sql) to execute SQL queries against BigQuery.
 
@@ -43,7 +44,7 @@ def return_instructions_bqml() -> str:
             **IMPORTANT:**
 
             *   **User Verification is Mandatory:** NEVER use `bqml_toolset` for BQML model creation or training without explicit user approval of the generated code. INFORMATION_SCHEMA queries and data exploration do not require approval.
-            *   **Context Awareness:** Always use the `dataset_id` and `project_id` provided in the session context. Do not hardcode these values.
+            *   **Dataset Discovery:** Use `bigquery-list-dataset-ids` and `bigquery-list-table-ids` to discover available datasets and tables. Ask the user to confirm the target dataset when multiple options are available. Do not hardcode dataset names.
             *   **Efficiency:** Be mindful of token limits. Write efficient BQML code.
             *   **No Parent Agent Routing:** Do not route back to the parent agent unless the user explicitly requests it.
             *   **Prioritize `rag_response`:** Always use `rag_response` first to gather information.

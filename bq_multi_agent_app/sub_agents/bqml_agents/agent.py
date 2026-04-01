@@ -12,9 +12,10 @@ from google.adk.agents import Agent
 from .prompts import return_instructions_bqml
 from .tools import bqml_toolset
 from .tools import rag_response
+from ...constants import MODEL_NAME
 
 bqml_agent = Agent(
-    model="gemini-3-flash-preview",
+    model=MODEL_NAME,
     name="bqml_agent",
     description=(
         "Specializes in BigQuery ML tasks including model creation, training, "
