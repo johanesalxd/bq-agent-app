@@ -777,7 +777,7 @@ sub-agent), which uses Code Interpreter (matplotlib) to generate charts. This
 produces image artifacts that render in Gemini Enterprise and the ADK web UI.
 
 **Reference:**
-- [CA API Known Limitations](https://cloud.google.com/gemini/data-agents/conversational-analytics-api/known-limitations)
+- [CA API Known Limitations](https://cloud.google.com/gemini/docs/conversational-analytics-api/known-limitations)
 - ADK source: `google/adk/tools/bigquery/data_insights_tool.py` lines 138-153
 
 ---
