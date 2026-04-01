@@ -80,7 +80,9 @@ def test_bigquery_toolset_alias_is_removed():
 def test_bq_credentials_uses_external_access_token_key():
     from bq_multi_agent_app.tools import _bq_credentials
 
-    assert _bq_credentials.external_access_token_key == "bq-oauth", (
+    # Value is read from AUTH_ID env var at module load time — assert it is set,
+    # not hardcoded, because the value changes across deployments (bq-oauth, bq-oauth-2, …).
+    assert _bq_credentials.external_access_token_key, (
         "_bq_credentials must use external_access_token_key, not client_id/client_secret"
     )
 
@@ -97,7 +99,7 @@ def test_data_agent_toolset_uses_external_access_token_key():
     from bq_multi_agent_app.tools import data_agent_toolset
 
     creds = data_agent_toolset._credentials_config
-    assert creds.external_access_token_key == "bq-oauth", (
+    assert creds.external_access_token_key, (
         "data_agent_toolset must use external_access_token_key"
     )
 
@@ -106,6 +108,6 @@ def test_bqml_toolset_uses_external_access_token_key():
     from bq_multi_agent_app.sub_agents.bqml_agents.tools import bqml_toolset
 
     creds = bqml_toolset._credentials_config
-    assert creds.external_access_token_key == "bq-oauth", (
+    assert creds.external_access_token_key, (
         "bqml_toolset must use external_access_token_key"
     )

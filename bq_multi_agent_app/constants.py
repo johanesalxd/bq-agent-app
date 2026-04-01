@@ -16,4 +16,4 @@ import os
 os.environ["GOOGLE_CLOUD_LOCATION"] = "global"
 
 # Gemini model used by all agents. Change here to update the whole system.
-MODEL_NAME = "gemini-3-flash-preview"
+MODEL_NAME = "gemini-3.1-pro-preview-customtools"
