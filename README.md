@@ -47,7 +47,7 @@ context, not keyword matching, and sends the request to the right tool or sub-ag
 User: "Show me sales by region last month"
   -> Root agent: standard data question
   -> Calls ask_data_insights with discovered table references
-  -> Returns data table + Vega-Lite chart (rendered natively in Gemini Enterprise)
+  -> Returns data table and text analysis
 
 User: "Run a significance test comparing region revenue"
   -> Root agent: statistical analysis, needs Python
@@ -73,12 +73,12 @@ User: "Ask order_user_agent about top customers"
 | 1 | **Data Agent** | User explicitly references a named BQ Data Agent | `DataAgentToolset` |
 | 2 | **BQML** | ML model creation, training, evaluation, predictions | BQML sub-agent |
 | 3 | **Advanced** | Statistical testing, custom Python, forecasting, anomaly detection | DS sub-agent |
-| 4 | **Default** | Everything else — counts, aggregations, trends, comparisons, charts | `ask_data_insights` (CA API) |
+| 4 | **Default** | Everything else — counts, aggregations, trends, comparisons (no charts) | `ask_data_insights` (CA API) |
 
 The **Default path** handles the vast majority of queries. `ask_data_insights` is
 the same backend that powers BQ Agents and Looker Conversational Analytics — it
-translates natural-language questions into SQL and returns Vega-Lite chart specs
-that render natively in Gemini Enterprise.
+translates natural-language questions into SQL and returns data and text analysis.
+Chart and visualization requests are routed to the DS sub-agent (Advanced path).
 
 ---
 
@@ -435,16 +435,15 @@ The CA API generates SQL internally — you do not need to write SQL.
 **Trends and comparisons**
 
 ```
-"Monthly order count trend for the past year as a line chart"
+"Monthly order count trend for the past year"
 "Compare revenue between Men's and Women's departments"
-"Show a bar chart of sales by product category for the top 15 categories"
 "What percentage of orders were returned vs completed last quarter?"
 ```
 
 The agent runs schema discovery first (list datasets → list tables → get table
 info), then calls `ask_data_insights` with fully-qualified table references.
-Results include data tables and Vega-Lite chart specs that render natively in
-Gemini Enterprise.
+Results include data tables and text analysis. For charts, use the Advanced path
+examples below.
 
 ---
 
@@ -725,6 +724,31 @@ BigQuery tool call should trigger a fresh OAuth consent prompt.
 > https://myaccount.google.com/permissions invalidates the token, but Gemini
 > Enterprise's server-side grant cache is not cleared. The next session receives
 > the same revoked token. Changing `AUTH_ID` is the reliable workaround.
+
+### ADK `ask_data_insights` Does Not Produce Charts
+
+**Symptom:** Visualization requests sent through `ask_data_insights` return only
+plain text data — no chart, no Vega-Lite spec — even when the user explicitly
+asks for a chart.
+
+**Root cause:** The ADK `BigQueryToolset` implementation of `ask_data_insights`
+(`data_insights_tool.py`) hardcodes a `systemInstruction` that tells the CA API:
+"You are STRICTLY FORBIDDEN from generating any charts, graphs, images, or any
+other form of visualization." It also sets `options.chart.image.noImage: {}`.
+This is an intentional ADK design decision — the docstring explicitly states:
+"The final answer is always in plain text, as the underlying API is instructed
+not to generate any charts."
+
+Note: The CA API itself *does* support Vega-Lite charts (line, bar, area,
+scatter, pie). The limitation is in the ADK tool wrapper, not the underlying API.
+
+**How this system handles it:** Visualization requests are routed to PATH C (DS
+sub-agent), which uses Code Interpreter (matplotlib) to generate charts. This
+produces image artifacts that render in Gemini Enterprise and the ADK web UI.
+
+**Reference:**
+- [CA API Known Limitations](https://cloud.google.com/gemini/data-agents/conversational-analytics-api/known-limitations)
+- ADK source: `google/adk/tools/bigquery/data_insights_tool.py` lines 138-153
 
 ---
 

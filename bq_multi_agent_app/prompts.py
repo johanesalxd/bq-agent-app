@@ -29,17 +29,16 @@ def return_instructions_root() -> str:
     → Delegate to `bqml_agent`
 
     **PATH C — ADVANCED PATH**: Request requires statistical testing, hypothesis tests,
-    custom Python/pandas transformations, or anomaly/forecast/contribution analysis.
+    custom Python/pandas transformations, anomaly/forecast/contribution analysis,
+    OR any chart or visualization request.
     → Delegate to `ds_agent` with: the user's question + fully-qualified table names +
       column descriptions discovered in Step 1.
 
     **PATH D — DEFAULT PATH** (most requests): Counts, aggregations, trends, comparisons,
-    rankings, and ALL chart/visualization requests.
+    and rankings that do NOT require a chart or visualization.
     → Use `ask_data_insights` with `table_references`.
-    → The CA API returns data AND a Vega-Lite chart spec rendered natively in Gemini
-      Enterprise. Do NOT delegate to `ds_agent` for charts — `ask_data_insights` handles
-      visualization. Only escalate to PATH C if `ask_data_insights` returns insufficient
-      results AND the user explicitly needs statistical analysis or Python.
+    → `ask_data_insights` returns data and text analysis only — it does NOT produce
+      charts or visualizations. For any visualization request, use PATH C instead.
 
     ## Step 3: Execution
 
