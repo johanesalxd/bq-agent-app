@@ -64,16 +64,6 @@ uv run adk web
 > See [Setup](#setup) for prerequisite details (OAuth client, Code Interpreter
 > Extension, RAG corpus) and [Deployment](#deployment) for advanced options.
 
-> **ADC note:** Do not set `GOOGLE_APPLICATION_CREDENTIALS`. The app uses
-> Application Default Credentials (ADC) via `gcloud auth application-default login`.
-> Setting `GOOGLE_APPLICATION_CREDENTIALS` to a service account key overrides ADC
-> and will cause auth failures for the per-user OAuth flows.
-
-> **Shell environment note:** If your shell exports `GOOGLE_CLOUD_LOCATION` (e.g.
-> from `.zshrc`), it overrides `.env`. The app and all setup scripts call
-> `load_dotenv(..., override=True)` to handle this correctly. Avoid exporting
-> region vars globally, or ensure your `.env` values are consistent with your shell.
-
 ---
 
 ## How It Works
@@ -202,6 +192,16 @@ gcloud services enable discoveryengine.googleapis.com  # Gemini Enterprise only
 
 Complete these steps once before running the app for the first time.
 
+> **ADC note:** Do not set `GOOGLE_APPLICATION_CREDENTIALS`. The app uses
+> Application Default Credentials (ADC) via `gcloud auth application-default login`.
+> Setting `GOOGLE_APPLICATION_CREDENTIALS` to a service account key overrides ADC
+> and will cause auth failures for the per-user OAuth flows.
+
+> **Shell environment note:** If your shell exports `GOOGLE_CLOUD_LOCATION` (e.g.
+> from `.zshrc`), it overrides `.env`. The app and all setup scripts call
+> `load_dotenv(..., override=True)` to handle this correctly. Avoid exporting
+> region vars globally, or ensure your `.env` values are consistent with your shell.
+
 ### 1. OAuth 2.0 client (required)
 
 BigQuery and Data Agent toolsets authenticate each user via OAuth. You need an
@@ -329,15 +329,8 @@ This deploys the new engine, updates `.env`, then deletes the old engine
 ./deployment/deploy.sh --agent_engine_id=ENGINE_ID
 ```
 
-`deploy.sh` configures Memory Bank automatically with 5 topics:
-
-| Topic | What is stored |
-|-------|---------------|
-| `USER_PERSONAL_INFO` | Team, role, organisational context |
-| `USER_PREFERENCES` | Chart style, analysis preferences, currency |
-| `KEY_CONVERSATION_DETAILS` | Milestones and conclusions from past sessions |
-| `EXPLICIT_INSTRUCTIONS` | Persistent user instructions |
-| `data_analysis_context` (custom) | Frequently used datasets, tables, domain context |
+`deploy.sh` configures Memory Bank automatically with 5 memory topics
+(see [Memory Bank](#memory-bank) for details).
 
 **Smoke test:**
 
@@ -648,81 +641,6 @@ Session 2 (new conversation):
        -> filters results to Women's department without being told
 ```
 
-#### How Memory Bank stores and evolves memories
-
-Memory Bank uses **extraction + consolidation**, not append-only storage. When
-`GenerateMemories` runs (triggered after each agent turn via
-`add_events_to_memory`):
-
-1. **Extraction**: Meaningful facts are pulled from the last 5 conversation
-   events. Only facts matching a configured memory topic are kept.
-2. **Consolidation**: Extracted facts are compared against existing memories
-   for the same user. If a new fact overlaps with an existing memory, the
-   existing memory is **updated** (not duplicated). If it's genuinely new, a
-   new memory is **created**. If it contradicts an existing memory, the old one
-   is **deleted**.
-
-This means memories evolve over time rather than piling up. For example:
-
-```
-Session 1: "Analyze top 10 products by order status"
-  -> Memory created: "Wants to analyze top 10 products by delivery and return status"
-
-Session 2: "Create a visualization of the top 10 products"
-  -> Existing memory updated: "...and wants a visualization of these top 10 products"
-  (NOT a second memory -- consolidated into the existing one)
-
-Session 3: "Now I want to focus on the bottom 5 products instead"
-  -> Existing memory updated (contradictory info replaces old)
-```
-
-If you see fewer memories than expected, this is by design. Memories grow when
-conversations cover genuinely different topics (e.g., a preference in one session
-and a dataset reference in another), but they stabilize when conversations cover
-the same ground.
-
-#### Session continuation vs cross-session memory
-
-These are two separate mechanisms:
-
-| | Same session | New session (cross-session) |
-|---|---|---|
-| **Context source** | Full conversation history (all `sessionEvents`) | Distilled facts from Memory Bank |
-| **Requires Memory Bank** | No | Yes |
-| **Fidelity** | Complete -- every message, tool call, and result | Summary -- only facts matching memory topics |
-| **Use case** | Multi-turn analysis within one conversation | Recalling preferences and context from past conversations |
-
-Within a single session, the agent has access to the complete conversation
-history. Memory Bank is only needed for carrying context **across** sessions.
-
-#### Inspecting stored memories
-
-```bash
-ACCESS_TOKEN=$(gcloud auth print-access-token)
-
-# List all memories for this engine
-curl -s -H "Authorization: Bearer ${ACCESS_TOKEN}" \
-  "https://us-central1-aiplatform.googleapis.com/v1beta1/${AGENT_ENGINE_RESOURCE_NAME}/memories"
-
-# View revision history for a specific memory (shows how it evolved)
-curl -s -H "Authorization: Bearer ${ACCESS_TOKEN}" \
-  "https://us-central1-aiplatform.googleapis.com/v1beta1/${AGENT_ENGINE_RESOURCE_NAME}/memories/MEMORY_ID/revisions"
-```
-
-#### Alternative: explicit memory control
-
-For append-like behavior where the agent decides exactly what to save, the
-Memory Bank API supports `CreateMemory` (direct writes) and
-`direct_memories_source` (pre-extracted facts). These bypass automatic
-extraction and give the agent full control over what is persisted. See the
-[Memory Bank docs](https://cloud.google.com/agent-builder/agent-engine/memory-bank/generate-memories#consolidate-pre-extracted-memories)
-for details.
-
-This system uses the automatic extraction approach (`add_events_to_memory`
-with `PreloadMemoryTool` / `LoadMemoryTool`) because it requires no custom
-memory management logic — Memory Bank handles deduplication and evolution
-automatically.
-
 ---
 
 ## Project Structure
@@ -873,3 +791,4 @@ produces image artifacts that render in Gemini Enterprise and the ADK web UI.
 - [Agent Engine Observability](https://cloud.google.com/agent-builder/agent-engine/manage/tracing)
 - [Gemini Enterprise](https://cloud.google.com/products/gemini/enterprise)
 - [Vertex AI Memory Bank](https://cloud.google.com/vertex-ai/generative-ai/docs/agent-engine/memory-bank)
+
