@@ -71,10 +71,35 @@ def main() -> None:
 
     adk_app = AdkApp(agent=root_agent)
 
+    # Environment variables forwarded to Agent Engine Runtime.
+    # Telemetry vars enable Cloud Trace + prompt/response logging.
+    runtime_env_vars = {
+        "GOOGLE_CLOUD_AGENT_ENGINE_ENABLE_TELEMETRY": "true",
+        "OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT": "true",
+    }
+    # Forward app-specific env vars if set.
+    _optional_env_vars = [
+        "GOOGLE_GENAI_USE_VERTEXAI",
+        "GOOGLE_CLOUD_PROJECT",
+        "GOOGLE_CLOUD_LOCATION",
+        "CODE_INTERPRETER_EXTENSION_NAME",
+        "GOOGLE_OAUTH_CLIENT_ID",
+        "GOOGLE_OAUTH_CLIENT_SECRET",
+        "BQML_RAG_CORPUS_NAME",
+    ]
+    for var in _optional_env_vars:
+        val = os.getenv(var)
+        if val:
+            runtime_env_vars[var] = val
+
     deployed = agent_engines.create(
         agent_engine=adk_app,
         config={
             "display_name": display_name,
+            "requirements": [
+                "google-cloud-aiplatform[agent_engines,adk]",
+            ],
+            "env_vars": runtime_env_vars,
         },
     )
 

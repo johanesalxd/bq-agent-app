@@ -8,6 +8,8 @@ Note: This agent must be wrapped as a tool (not used as sub-agent) to prevent
 function call interpretation errors.
 """
 
+import os
+
 from google.adk.agents import Agent
 from google.adk.code_executors.vertex_ai_code_executor import VertexAiCodeExecutor
 
@@ -23,8 +25,11 @@ ds_agent = Agent(
     ),
     instruction=return_instructions_ds(),
     code_executor=VertexAiCodeExecutor(
-        optimize_data_file=False,  # Don't optimize data files for simpler behavior
-        # Each execution starts fresh (no variable persistence)
+        optimize_data_file=False,
         stateful=False,
+        # Reuse a pre-provisioned Code Interpreter extension to prevent
+        # VertexAiCodeExecutor from creating a new one on every run.
+        # See setup/vertex_extensions/ for provisioning instructions.
+        resource_name=os.getenv("CODE_INTERPRETER_EXTENSION_NAME"),
     ),
 )
