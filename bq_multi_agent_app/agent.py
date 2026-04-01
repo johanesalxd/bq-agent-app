@@ -23,7 +23,8 @@ from .prompts import return_instructions_root
 from .sub_agents import bqml_agent, ds_agent
 from .tools import ca_toolset, data_agent_toolset
 
-date_today = date.today()
+# Number of recent events to process for memory generation per turn.
+_MEMORY_EVENT_WINDOW = 5
 
 
 async def _generate_memories_callback(callback_context: CallbackContext) -> None:
@@ -33,9 +34,18 @@ async def _generate_memories_callback(callback_context: CallbackContext) -> None
     processing) to avoid reprocessing events from prior turns.
     """
     await callback_context.add_events_to_memory(
-        events=callback_context.session.events[-5:-1]
+        events=callback_context.session.events[-_MEMORY_EVENT_WINDOW:-1]
     )
-    return None
+
+
+def _global_instruction() -> str:
+    """Build global instruction with current date (evaluated per-request)."""
+    return f"""
+    You are a Data Science and BigQuery Analytics Multi Agent System.
+    Today's date: {date.today()}
+
+    Follow the detailed instructions provided to discover schema and execute analysis.
+    """
 
 
 root_agent = Agent(
@@ -46,14 +56,7 @@ root_agent = Agent(
         "and conversational analytics via BQ Data Agents. Routes requests to the "
         "appropriate tool or sub-agent based on the type of analysis required."
     ),
-    global_instruction=(
-        f"""
-        You are a Data Science and BigQuery Analytics Multi Agent System.
-        Today's date: {date_today}
-
-        Follow the detailed instructions provided to discover schema and execute analysis.
-        """
-    ),
+    global_instruction=_global_instruction,
     instruction=return_instructions_root(),
     sub_agents=[ds_agent, bqml_agent],
     tools=[

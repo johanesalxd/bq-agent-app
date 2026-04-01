@@ -14,14 +14,17 @@ def return_instructions_ds() -> str:
     - bigquery-list-dataset-ids, bigquery-get-dataset-info — discover available datasets
     - bigquery-list-table-ids, bigquery-get-table-info    — discover table schemas
     - bigquery-execute-sql                                 — run direct SQL queries
+    - bigquery-get-job-info                                — check status of long-running jobs
     - bigquery-forecast                                    — TimesFM time-series forecasting
     - bigquery-analyze-contribution                        — contribution/attribution analysis
     - bigquery-detect-anomalies                            — anomaly detection on time series
 
     **Code Interpreter (Python):**
-    Pre-imported: `io`, `math`, `re`, `matplotlib.pyplot as plt`, `numpy as np`,
-    `pandas as pd`, `scipy`
-    Available: `seaborn`, `sklearn`, `statsmodels`, `PIL`, `json`, `csv`, `datetime`
+    Confirmed available (empirically verified):
+      numpy 1.26, pandas 2.2, matplotlib 3.8, scipy 1.12,
+      seaborn 0.13, sklearn 1.4, statsmodels 0.14, PIL 10.2,
+      json, csv, datetime, io, math, re
+    NOT available: xgboost, lightgbm, plotly
     NOT available: `pip install` (forbidden — never attempt package installation)
 
     # Core Principles

@@ -1,9 +1,9 @@
 .venv/
 __pycache__/
-setup/mcp_toolbox/toolbox
 mise.toml
 .env
 *.whl
 .adk/
 .pytest_cache/
 .ruff_cache/
+.opencode/

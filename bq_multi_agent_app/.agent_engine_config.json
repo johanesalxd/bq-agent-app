@@ -1,0 +1,39 @@
+{
+  "display_name": "BigQuery Multi-Agent App",
+  "context_spec": {
+    "memory_bank_config": {
+      "customization_configs": [
+        {
+          "memory_topics": [
+            {
+              "managed_memory_topic": {
+                "managed_topic_enum": "USER_PERSONAL_INFO"
+              }
+            },
+            {
+              "managed_memory_topic": {
+                "managed_topic_enum": "USER_PREFERENCES"
+              }
+            },
+            {
+              "managed_memory_topic": {
+                "managed_topic_enum": "KEY_CONVERSATION_DETAILS"
+              }
+            },
+            {
+              "managed_memory_topic": {
+                "managed_topic_enum": "EXPLICIT_INSTRUCTIONS"
+              }
+            },
+            {
+              "custom_memory_topic": {
+                "label": "data_analysis_context",
+                "description": "User's frequently used datasets, tables, preferred analysis patterns, domain-specific context about their data, and recurring analytical questions."
+              }
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

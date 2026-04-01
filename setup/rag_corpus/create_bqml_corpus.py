@@ -34,15 +34,13 @@ _BQML_DOCS_PATH = "gs://cloud-samples-data/adk-samples/data-science/bqml"
 
 
 def create_rag_corpus(
-    project_id: str,
-    location: str,
     display_name: str = "bqml_referenceguide_corpus",
 ) -> str:
     """Create a RAG corpus with the text-embedding-005 embedding model.
 
+    Requires vertexai.init() to have been called before invocation.
+
     Args:
-        project_id: GCP project ID.
-        location: GCP region for the corpus.
         display_name: Human-readable corpus name.
 
     Returns:
@@ -102,14 +100,19 @@ def _write_corpus_name_to_env(corpus_name: str) -> None:
 
 
 if __name__ == "__main__":
-    load_dotenv(dotenv_path=_ENV_FILE)
+    # override=True ensures .env values take precedence over shell env vars
+    # (e.g. GOOGLE_CLOUD_LOCATION=global set in the shell session).
+    load_dotenv(dotenv_path=_ENV_FILE, override=True)
 
     project_id = os.getenv("GOOGLE_CLOUD_PROJECT")
     if not project_id:
         raise RuntimeError("GOOGLE_CLOUD_PROJECT must be set in .env or environment.")
 
-    # Default to us-west4 (higher Vertex AI RAG quota than us-central1).
-    location = os.getenv("GOOGLE_CLOUD_LOCATION", "us-west4")
+    # Use RAG_LOCATION if set; otherwise default to us-west4.
+    # us-west4 has higher Vertex AI RAG quota than us-central1 for new projects.
+    # Do NOT fall back to GOOGLE_CLOUD_LOCATION — RAG region is independent of
+    # the main deployment region.
+    location = os.getenv("RAG_LOCATION", "us-west4")
 
     vertexai.init(project=project_id, location=location)
 
@@ -117,7 +120,7 @@ if __name__ == "__main__":
 
     if not corpus_name:
         print("Creating new BQML RAG corpus...")
-        corpus_name = create_rag_corpus(project_id, location)
+        corpus_name = create_rag_corpus()
         print(f"Corpus created: {corpus_name}")
     else:
         print(f"Using existing corpus: {corpus_name}")

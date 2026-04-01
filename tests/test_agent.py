@@ -82,8 +82,11 @@ def test_root_agent_does_not_have_load_artifacts_directly(root_agent):
 
 
 def test_root_agent_has_global_instruction(root_agent):
-    assert root_agent.global_instruction
-    assert "Data Science" in root_agent.global_instruction
+    gi = root_agent.global_instruction
+    assert gi
+    # global_instruction may be a callable (to evaluate date per-request) or a string.
+    text = gi() if callable(gi) else gi
+    assert "Data Science" in text
 
 
 def test_root_agent_has_instruction(root_agent):

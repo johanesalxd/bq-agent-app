@@ -19,6 +19,8 @@ def return_instructions_root() -> str:
            - Table descriptions and business context
            - Partition/clustering info for optimization
         5. **Build Semantic Model**: Leverage descriptions for business context and relationships
+        6. **Cross-Dataset Discovery**: Use 'bigquery-search-catalog' to find tables, views,
+           models, or routines by keyword when the user does not know which dataset to look in
 
         **CRITICAL**: Use exact names as discovered. Reuse schema from earlier in the
         conversation — do not re-discover unless the user asks or a new table/dataset is needed.

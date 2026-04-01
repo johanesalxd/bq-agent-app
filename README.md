@@ -31,6 +31,11 @@ uv run adk web
 > Setting `GOOGLE_APPLICATION_CREDENTIALS` to a service account key overrides ADC
 > and will cause auth failures for the per-user OAuth flows.
 
+> **Shell environment note:** If your shell exports `GOOGLE_CLOUD_LOCATION` (e.g.
+> from `.zshrc`), it overrides `.env`. The app and all setup scripts call
+> `load_dotenv(..., override=True)` to handle this correctly. Avoid exporting
+> region vars globally, or ensure your `.env` values are consistent with your shell.
+
 ---
 
 ## How It Works
@@ -100,8 +105,8 @@ Root Agent  bigquery_ds_agent
     │   │   list_dataset_ids  get_dataset_info  list_table_ids
     │   │   get_table_info  get_job_info
     │   ├── Code Interpreter  [VertexAiCodeExecutor]
-    │   │   Confirmed: numpy  pandas  matplotlib  scipy
-    │   │   (seaborn  sklearn  statsmodels  PIL — verify empirically)
+    │   │   numpy 1.26.4  pandas 2.2.1  matplotlib 3.8.3  scipy 1.12.0
+    │   │   seaborn 0.13.2  scikit-learn 1.4.0  statsmodels 0.14.1  Pillow 10.2.0
     │   └── load_artifacts
     │
     └── BQML Sub-Agent  bqml_agent
@@ -116,11 +121,11 @@ Root Agent  bigquery_ds_agent
 | Component | Details |
 |-----------|---------|
 | Framework | Google ADK 1.28+ |
-| Model | Gemini 3 Flash Preview |
+| Model | Gemini 2.5 Flash Preview |
 | CA API | `ask_data_insights` — same backend as BQ Agents and Looker CA |
 | Auth | Per-user OAuth passthrough (BigQuery + Data Agents) |
 | Code execution | `VertexAiCodeExecutor` + pre-provisioned Code Interpreter Extension |
-| BQML docs | Vertex AI RAG corpus (`text-embedding-005`) |
+| BQML docs | Vertex AI RAG corpus (`text-embedding-005`, `us-west4`) |
 | Memory | Vertex AI Memory Bank via `PreloadMemoryTool` / `LoadMemoryTool` |
 
 ---
@@ -153,6 +158,8 @@ gcloud services enable discoveryengine.googleapis.com  # Gemini Enterprise only
 
 ## Setup
 
+Complete these steps once before running the app for the first time.
+
 ### 1. OAuth 2.0 client (required)
 
 BigQuery and Data Agent toolsets authenticate each user via OAuth. You need an
@@ -165,7 +172,7 @@ OAuth 2.0 client registered in Google Cloud Console.
    - Gemini Enterprise: `https://vertexaisearch.cloud.google.com/oauth-redirect`
    - Gemini Enterprise: `https://vertexaisearch.cloud.google.com/static/oauth/oauth.html`
 4. Copy **Client ID** and **Client Secret** to `.env`:
-   ```bash
+   ```
    GOOGLE_OAUTH_CLIENT_ID=your-client-id.apps.googleusercontent.com
    GOOGLE_OAUTH_CLIENT_SECRET=your-client-secret
    ```
@@ -198,16 +205,16 @@ for full details.
 
 ### 3. BQML RAG corpus (required for BQML agent)
 
-The BQML agent uses a Vertex AI RAG corpus for documentation lookup.
+The BQML agent uses a Vertex AI RAG corpus for documentation lookup. The script
+deploys the corpus and writes `BQML_RAG_CORPUS_NAME` to `.env` automatically.
 
 ```bash
 uv run python setup/rag_corpus/create_bqml_corpus.py
-# BQML_RAG_CORPUS_NAME is written to .env automatically
 ```
 
-> **Region note:** The script defaults to `us-west4` (higher Vertex AI RAG quota
-> than `us-central1`). Override with `GOOGLE_CLOUD_LOCATION` if your project
-> supports RAG in your preferred region.
+> **Region note:** The script defaults to `us-west4` (`RAG_LOCATION` env var).
+> New GCP projects typically have higher Vertex AI RAG quota there than in
+> `us-central1`. Override by setting `RAG_LOCATION` in `.env` before running.
 
 ---
 
@@ -217,16 +224,17 @@ uv run python setup/rag_corpus/create_bqml_corpus.py
 uv run adk web
 ```
 
+Open `http://localhost:8000` in your browser. On first tool use, you will be
+prompted to complete an OAuth flow for your BigQuery credentials.
+
 ### With Memory Bank
 
 Memory Bank persists conversation context across sessions. It requires a deployed
 Agent Engine instance as the backing store (see [Deployment](#deployment)).
 
 ```bash
-# After deploying, extract the numeric engine ID from AGENT_ENGINE_RESOURCE_NAME:
-# e.g. "projects/123/locations/us-central1/reasoningEngines/456789" -> 456789
-# Set AGENT_ENGINE_ID=456789 in .env, then:
-
+# After deploying, set AGENT_ENGINE_ID in .env (numeric suffix of the resource name),
+# then run:
 uv run adk web --memory_service_uri=agentengine://$AGENT_ENGINE_ID
 ```
 
@@ -234,14 +242,29 @@ uv run adk web --memory_service_uri=agentengine://$AGENT_ENGINE_ID
 
 ## Deployment
 
-### Agent Engine (recommended)
+### Agent Engine
+
+The app deploys to Vertex AI Agent Engine using the ADK CLI. Deploying from source
+avoids serialization issues with `VertexAiCodeExecutor`.
+
+**Prerequisites:** Complete all Setup steps above and ensure `.env` has
+`GOOGLE_CLOUD_PROJECT`, `GOOGLE_CLOUD_LOCATION`, `GOOGLE_OAUTH_CLIENT_ID`,
+`GOOGLE_OAUTH_CLIENT_SECRET`, `CODE_INTERPRETER_EXTENSION_NAME`, and
+`BQML_RAG_CORPUS_NAME` set.
 
 ```bash
-# Set GCS_STAGING_BUCKET in .env, then:
-uv run python deployment/deploy.py
+chmod +x deployment/deploy.sh
+./deployment/deploy.sh
 ```
 
-`deploy.py` configures Memory Bank automatically with 5 topics:
+After deployment completes, copy the resource name from the output to `.env`:
+
+```
+AGENT_ENGINE_RESOURCE_NAME=projects/PROJECT_NUMBER/locations/REGION/reasoningEngines/ENGINE_ID
+AGENT_ENGINE_ID=ENGINE_ID
+```
+
+`deploy.sh` configures Memory Bank automatically with 5 topics:
 
 | Topic | What is stored |
 |-------|---------------|
@@ -251,15 +274,20 @@ uv run python deployment/deploy.py
 | `EXPLICIT_INSTRUCTIONS` | Persistent user instructions |
 | `data_analysis_context` (custom) | Frequently used datasets, tables, domain context |
 
-After deployment, copy the printed resource name to `AGENT_ENGINE_RESOURCE_NAME`
-in `.env`.
+**To update an existing deployment:**
+
+```bash
+./deployment/deploy.sh --agent_engine_id=ENGINE_ID
+```
 
 **Smoke test:**
+
 ```bash
 uv run python deployment/test_deployment.py
 ```
 
 **Session management via REST:**
+
 ```bash
 ACCESS_TOKEN=$(gcloud auth print-access-token)
 
@@ -278,11 +306,23 @@ After deploying to Agent Engine, register the agent to surface it in the Gemini
 Enterprise console. Gemini Enterprise renders Vega-Lite charts from
 `ask_data_insights` natively.
 
+**Prerequisites:** `AGENT_ENGINE_RESOURCE_NAME` and `GEMINI_ENTERPRISE_APP_ID`
+must be set in `.env`. Find your app ID in the Gemini Enterprise console under
+your app settings.
+
 ```bash
-# Set GEMINI_ENTERPRISE_APP_ID and AGENT_ENGINE_RESOURCE_NAME in .env, then:
 chmod +x deployment/register_gemini_enterprise.sh
 ./deployment/register_gemini_enterprise.sh
 ```
+
+The script:
+1. Extracts the region from `AGENT_ENGINE_RESOURCE_NAME` automatically.
+2. Calls the Discovery Engine API to register the agent.
+3. Prints the agent ID and a link to the console on success.
+
+> **Endpoint location:** The Discovery Engine endpoint defaults to `global`
+> (most Gemini Enterprise apps). Override with `GEMINI_ENTERPRISE_ENDPOINT_LOCATION=us`
+> or `=eu` in `.env` if your app is region-scoped.
 
 ### Cloud Run
 
@@ -339,26 +379,29 @@ bq-agent-app/
 ├── pyproject.toml
 ├── .env.example
 ├── bq_multi_agent_app/
-│   ├── __init__.py               # ADK discovery re-export
-│   ├── agent.py                  # Root agent: Memory Bank, sub-agents, ca_toolset
-│   ├── tools.py                  # ca_toolset, ds_toolset, data_agent_toolset
-│   ├── prompts.py                # Root agent prompt (intent-based routing)
+│   ├── __init__.py                    # ADK discovery re-export
+│   ├── agent.py                       # Root agent: Memory Bank, sub-agents, ca_toolset
+│   ├── tools.py                       # ca_toolset, ds_toolset, data_agent_toolset
+│   ├── prompts.py                     # Root agent prompt (intent-based routing)
+│   ├── .agent_engine_config.json      # Memory Bank config for CLI deploy
+│   ├── requirements.txt               # Python deps for Agent Engine container
 │   └── sub_agents/
 │       ├── __init__.py
 │       ├── bqml_agents/
-│       │   ├── agent.py          # BQML sub-agent
+│       │   ├── agent.py               # BQML sub-agent
 │       │   ├── prompts.py
-│       │   └── tools.py          # bqml_toolset (execute_sql + discovery, write-enabled)
+│       │   └── tools.py               # bqml_toolset (execute_sql + discovery, write-enabled)
 │       └── ds_agents/
-│           ├── agent.py          # DS sub-agent: ds_toolset + Code Interpreter
+│           ├── agent.py               # DS sub-agent: ds_toolset + Code Interpreter
 │           └── prompts.py
 ├── deployment/
-│   ├── deploy.py                 # Agent Engine deployment + Memory Bank config
-│   ├── register_gemini_enterprise.sh
-│   └── test_deployment.py        # Smoke test for deployed instance
+│   ├── deploy.sh                      # Agent Engine deployment via ADK CLI
+│   ├── register_gemini_enterprise.sh  # Gemini Enterprise registration
+│   └── test_deployment.py             # Smoke test for deployed instance
 ├── setup/
+│   ├── probe_code_interpreter.py      # Verify available Code Interpreter libraries
 │   ├── rag_corpus/
-│   │   └── create_bqml_corpus.py # Vertex AI RAG corpus provisioning
+│   │   └── create_bqml_corpus.py      # Vertex AI RAG corpus provisioning
 │   └── vertex_extensions/
 │       ├── setup_vertex_extensions.py
 │       ├── cleanup_vertex_extensions.py

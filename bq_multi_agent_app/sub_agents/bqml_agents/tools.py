@@ -20,7 +20,7 @@ def rag_response(query: str) -> str:
     """Retrieves contextually relevant information from a RAG corpus.
 
     Args:
-        query (str): The query string to search within the corpus.
+        query: The query string to search within the corpus.
 
     Returns:
         str: The response containing retrieved information from the corpus.
