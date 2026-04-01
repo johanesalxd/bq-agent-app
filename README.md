@@ -367,9 +367,9 @@ chmod +x deployment/register_gemini_enterprise.sh
 ```
 
 The script:
-1. Extracts the region from `AGENT_ENGINE_RESOURCE_NAME` automatically.
-2. Calls the Discovery Engine API to register the agent.
-3. Prints the agent ID and a link to the console on success.
+1. Deletes any existing custom agent registrations (preserves Google built-in agents).
+2. Recreates the authorization resource with your OAuth credentials.
+3. Registers the agent and prints the agent ID on success.
 
 > **Endpoint location:** The Discovery Engine endpoint defaults to `global`
 > (most Gemini Enterprise apps). Override with `GEMINI_ENTERPRISE_ENDPOINT_LOCATION=us`
