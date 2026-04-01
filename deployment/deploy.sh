@@ -129,7 +129,7 @@ main() {
             local delete_status
             delete_status=$(curl -s -o /dev/null -w "%{http_code}" -X DELETE \
                 -H "Authorization: Bearer ${access_token}" \
-                "https://${region}-aiplatform.googleapis.com/v1beta1/${old_resource}")
+                "https://${region}-aiplatform.googleapis.com/v1beta1/${old_resource}?force=true")
 
             if [[ "${delete_status}" == "200" || "${delete_status}" == "204" ]]; then
                 echo "  Deleted engine ${old_engine_id} (HTTP ${delete_status})."
@@ -137,8 +137,9 @@ main() {
                 echo "  Engine ${old_engine_id} not found (already deleted?)."
             else
                 echo "  WARNING: Delete returned HTTP ${delete_status}. Engine may still exist." >&2
-                echo "  You can delete it manually:" >&2
-                echo "    gcloud ai reasoning-engines delete ${old_engine_id} --location=${region}" >&2
+                echo "  Delete it manually with:" >&2
+                echo "    curl -X DELETE -H \"Authorization: Bearer \$(gcloud auth print-access-token)\" \\" >&2
+                echo "      \"https://${region}-aiplatform.googleapis.com/v1beta1/projects/\${project_number}/locations/${region}/reasoningEngines/${old_engine_id}?force=true\"" >&2
             fi
         fi
 
