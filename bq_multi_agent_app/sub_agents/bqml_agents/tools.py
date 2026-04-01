@@ -2,46 +2,18 @@
 Tools for BQML Agent
 
 This module provides BQML-specific tools including:
-1. check_bq_models: List BigQuery ML models in a dataset
-2. rag_response: Query BQML documentation from RAG corpus
-3. bqml_toolset: ADK built-in BigQueryToolset for executing SQL/BQML statements
+1. rag_response: Query BQML documentation from RAG corpus
+2. bqml_toolset: ADK built-in BigQueryToolset for executing SQL/BQML statements
+
+Note: Listing BigQuery ML models is handled via the bqml_toolset using
+INFORMATION_SCHEMA.MODELS, which ensures per-user OAuth is enforced consistently.
 """
 
 import os
 
 from google.adk.tools.bigquery import BigQueryCredentialsConfig, BigQueryToolset
 from google.adk.tools.bigquery.config import BigQueryToolConfig, WriteMode
-from google.cloud import bigquery
 from vertexai import rag
-
-
-def check_bq_models(dataset_id: str) -> str:
-    """Lists models in a BigQuery dataset and returns them as a string.
-
-    Args:
-        dataset_id: The ID of the BigQuery dataset (e.g., "project.dataset").
-
-    Returns:
-        A string representation of a list of dictionaries, where each dictionary
-        contains the 'name' and 'type' of a model in the specified dataset.
-        Returns an empty string "[]" if no models are found.
-    """
-    try:
-        client = bigquery.Client()
-
-        models = client.list_models(dataset_id)
-        model_list = []  # Initialize as a list
-
-        print(f"Models contained in '{dataset_id}':")
-        for model in models:
-            model_id = model.model_id
-            model_type = model.model_type
-            model_list.append({"name": model_id, "type": model_type})
-
-        return str(model_list)
-
-    except Exception as e:
-        return f"An error occurred: {str(e)}"
 
 
 def rag_response(query: str) -> str:

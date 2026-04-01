@@ -132,7 +132,7 @@ def return_instructions_root() -> str:
 
         1. **BQML keyword detected**: "bqml model" → Immediate delegation to BQML sub-agent
         2. **No schema discovery needed** → Delegate directly with dataset context
-        3. **BQML sub-agent handles**: Uses check_bq_models tool and RAG corpus for specialized BQML operations
+        3. **BQML sub-agent handles**: Queries INFORMATION_SCHEMA for existing models, uses RAG corpus for BQML documentation, and executes BQML via its toolset
 
         **Example Workflow 3 - Data Agent:**
         User: "Ask my data agent about top selling products last quarter"

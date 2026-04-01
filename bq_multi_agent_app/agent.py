@@ -22,6 +22,11 @@ date_today = date.today()
 root_agent = Agent(
     model="gemini-3-flash-preview",
     name="bigquery_ds_agent",
+    description=(
+        "Orchestrates BigQuery analytics, data science analysis, BigQuery ML operations, "
+        "and conversational analytics via BQ Data Agents. Routes requests to the "
+        "appropriate tool or sub-agent based on the type of analysis required."
+    ),
     global_instruction=(
         f"""
         You are a Data Science and BigQuery Analytics Multi Agent System.

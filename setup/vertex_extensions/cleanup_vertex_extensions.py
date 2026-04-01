@@ -4,7 +4,6 @@ Simple script to clean up Vertex AI Code Interpreter extensions.
 """
 
 import argparse
-import sys
 from typing import Any, Dict, List
 
 from utils import get_access_token
@@ -12,7 +11,9 @@ from utils import get_project_id
 from utils import make_api_request
 
 
-def list_vertex_extensions(project_id: str, region: str = "us-central1") -> List[Dict[str, Any]]:
+def list_vertex_extensions(
+    project_id: str, region: str = "us-central1"
+) -> List[Dict[str, Any]]:
     """List all Vertex AI extensions in the project."""
     access_token = get_access_token()
     headers = {"Authorization": f"Bearer {access_token}"}
@@ -28,7 +29,9 @@ def list_vertex_extensions(project_id: str, region: str = "us-central1") -> List
     return response.get("extensions", [])
 
 
-def filter_code_interpreter_extensions(extensions: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+def filter_code_interpreter_extensions(
+    extensions: List[Dict[str, Any]],
+) -> List[Dict[str, Any]]:
     """Filter to only Code Interpreter extensions."""
     code_interpreter_extensions = []
 
@@ -42,7 +45,9 @@ def filter_code_interpreter_extensions(extensions: List[Dict[str, Any]]) -> List
     return code_interpreter_extensions
 
 
-def delete_extension(project_id: str, region: str, extension_id: str, dry_run: bool = False) -> bool:
+def delete_extension(
+    project_id: str, region: str, extension_id: str, dry_run: bool = False
+) -> bool:
     """Delete a specific extension."""
     if dry_run:
         print(f"[DRY RUN] Would delete extension {extension_id}")
@@ -72,11 +77,14 @@ def extract_extension_id(extension_name: str) -> str:
 def main():
     """Main function to clean up extensions."""
     parser = argparse.ArgumentParser(
-        description="Clean up Vertex AI Code Interpreter extensions")
-    parser.add_argument("--dry-run", action="store_true",
-                        help="Preview what would be deleted without actually deleting")
-    parser.add_argument("--keep-id", required=True,
-                        help="Extension ID to keep")
+        description="Clean up Vertex AI Code Interpreter extensions"
+    )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Preview what would be deleted without actually deleting",
+    )
+    parser.add_argument("--keep-id", required=True, help="Extension ID to keep")
 
     args = parser.parse_args()
 
@@ -103,15 +111,13 @@ def main():
         return
 
     # Filter for Code Interpreter extensions
-    code_interpreter_extensions = filter_code_interpreter_extensions(
-        extensions)
+    code_interpreter_extensions = filter_code_interpreter_extensions(extensions)
 
     if not code_interpreter_extensions:
         print("No Code Interpreter extensions found.")
         return
 
-    print(
-        f"Found {len(code_interpreter_extensions)} Code Interpreter extensions:")
+    print(f"Found {len(code_interpreter_extensions)} Code Interpreter extensions:")
     print()
 
     # Process extensions
@@ -126,10 +132,8 @@ def main():
 
         if ext_id == args.keep_id:
             print("  Status: ✓ KEEPING")
-            keep_extension_found = True
         else:
-            print(
-                f"  Status: ✗ {'WOULD DELETE' if args.dry_run else 'WILL DELETE'}")
+            print(f"  Status: ✗ {'WOULD DELETE' if args.dry_run else 'WILL DELETE'}")
             extensions_to_delete.append(ext_id)
 
     if not extensions_to_delete:

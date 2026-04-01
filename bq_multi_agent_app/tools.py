@@ -44,27 +44,23 @@ data_agent_toolset = DataAgentToolset(
     data_agent_tool_config=DataAgentToolConfig(max_query_result_rows=100),
 )
 
+# AgentTool wrapping the DS agent. Instantiated once at module level to avoid
+# creating a new object on every call_data_science_agent invocation.
+_ds_agent_tool = AgentTool(agent=ds_agent)
 
-async def call_data_science_agent(
-    question: str,
-    data: str,
-    tool_context: ToolContext,
-) -> str:
-    """
-    Call DS agent to analyze data using Python code execution.
 
-    This function wraps the DS agent as a tool to prevent code execution errors
-    that would occur if used as a sub-agent.
+def _build_ds_request(question: str, data: str) -> str:
+    """Builds the formatted request prompt for the data science agent.
 
     Args:
-        question: The analytical question to answer
-        data: The data to analyze (CSV, JSON, query results, etc.)
-        tool_context: Context for sharing state between tools
+        question: The analytical question to answer.
+        data: The data to analyze (CSV, JSON, query results, etc.).
 
     Returns:
-        Analysis result with insights, visualizations, and conclusions
+        Formatted prompt string combining the question and data with
+        analysis instructions.
     """
-    full_request = f"""
+    return f"""
     Please analyze the provided data to answer the following question:
 
     QUESTION: {question}
@@ -79,11 +75,29 @@ async def call_data_science_agent(
     4. Clear insights and conclusions
     """
 
-    # Wrap DS agent to handle code execution properly
-    agent_tool = AgentTool(agent=ds_agent)
+
+async def call_data_science_agent(
+    question: str,
+    data: str,
+    tool_context: ToolContext,
+) -> str:
+    """Calls the DS agent to analyze data using Python code execution.
+
+    This function wraps the DS agent as a tool to prevent code execution errors
+    that would occur if used as a sub-agent.
+
+    Args:
+        question: The analytical question to answer.
+        data: The data to analyze (CSV, JSON, query results, etc.).
+        tool_context: Context for sharing state between tools.
+
+    Returns:
+        Analysis result with insights, visualizations, and conclusions.
+    """
+    full_request = _build_ds_request(question, data)
 
     try:
-        result = await agent_tool.run_async(
+        result = await _ds_agent_tool.run_async(
             args={"request": full_request}, tool_context=tool_context
         )
         # Store result for potential use by other tools

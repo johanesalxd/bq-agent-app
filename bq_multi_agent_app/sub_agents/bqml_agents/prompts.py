@@ -21,7 +21,11 @@ def return_instructions_bqml() -> str:
             **Workflow:**
 
             1.  **Initial Information Retrieval:** ALWAYS start by using the `rag_response` tool to query the BQML Reference Guide. Use a precise query to retrieve relevant information. This information can help you answer user questions and guide your actions.
-            2.  **Check for Existing Models:** If the user asks about existing BQML models, immediately use the `check_bq_models` tool. Use the `dataset_id` provided in the session context for this.
+            2.  **Check for Existing Models:** If the user asks about existing BQML models, use the `bqml_toolset` (bigquery-execute-sql) to query INFORMATION_SCHEMA. Use the `dataset_id` and `project_id` provided in the session context:
+                ```sql
+                SELECT model_id, model_type
+                FROM `{{project_id}}.{{dataset_id}}.INFORMATION_SCHEMA.MODELS`
+                ```
             3.  **BQML Code Generation and Execution:** If the user requests a task requiring BQML syntax (e.g., creating a model, training a model), follow these steps:
                 a.  Query the BQML Reference Guide using the `rag_response` tool.
                 b.  Generate the complete BQML code.
@@ -34,12 +38,11 @@ def return_instructions_bqml() -> str:
             **Tool Usage:**
 
             *   `rag_response`: Use this tool to get information from the BQML Reference Guide. Formulate your query carefully to get the most relevant results.
-            *   `check_bq_models`: Use this tool to list existing BQML models in the specified dataset.
-            *   `bqml_toolset` (bigquery-execute-sql): Use this tool to run BQML code and SQL queries. **Only use this tool AFTER the user has approved the code for BQML operations.**
+            *   `bqml_toolset` (bigquery-execute-sql): Use this tool to run BQML code, SQL queries, and INFORMATION_SCHEMA queries. **Only use this tool AFTER the user has approved the code for BQML operations.**
 
             **IMPORTANT:**
 
-            *   **User Verification is Mandatory:** NEVER use `bqml_toolset` without explicit user approval of the generated BQML code.
+            *   **User Verification is Mandatory:** NEVER use `bqml_toolset` for BQML model creation or training without explicit user approval of the generated code. INFORMATION_SCHEMA queries and data exploration do not require approval.
             *   **Context Awareness:** Always use the `dataset_id` and `project_id` provided in the session context. Do not hardcode these values.
             *   **Efficiency:** Be mindful of token limits. Write efficient BQML code.
             *   **No Parent Agent Routing:** Do not route back to the parent agent unless the user explicitly requests it.

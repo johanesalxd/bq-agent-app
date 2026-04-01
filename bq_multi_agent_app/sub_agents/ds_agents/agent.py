@@ -13,9 +13,14 @@ from google.adk.code_executors.vertex_ai_code_executor import VertexAiCodeExecut
 
 from .prompts import return_instructions_ds
 
-root_agent = Agent(
+ds_agent = Agent(
     model="gemini-3-flash-preview",
     name="ds_agent",
+    description=(
+        "Performs data science analysis with Python code execution using pandas, "
+        "matplotlib, numpy, and scipy. Produces visualizations, statistical analysis, "
+        "and actionable business insights from provided data."
+    ),
     instruction=return_instructions_ds(),
     code_executor=VertexAiCodeExecutor(
         optimize_data_file=False,  # Don't optimize data files for simpler behavior
