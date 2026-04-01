@@ -19,7 +19,7 @@ uv sync
 
 # 3. Configure
 cp .env.example .env
-# Edit .env: set GOOGLE_CLOUD_PROJECT, GOOGLE_CLOUD_LOCATION,
+# Edit .env: set GOOGLE_CLOUD_PROJECT, AGENT_ENGINE_REGION,
 #            GOOGLE_OAUTH_CLIENT_ID, GOOGLE_OAUTH_CLIENT_SECRET
 
 # 4. Run
@@ -258,7 +258,7 @@ The app deploys to Vertex AI Agent Engine using the ADK CLI. Deploying from sour
 avoids serialization issues with `VertexAiCodeExecutor`.
 
 **Prerequisites:** Complete all Setup steps above and ensure `.env` has
-`GOOGLE_CLOUD_PROJECT`, `GOOGLE_CLOUD_LOCATION`, `GOOGLE_OAUTH_CLIENT_ID`,
+`GOOGLE_CLOUD_PROJECT`, `AGENT_ENGINE_REGION`, `GOOGLE_OAUTH_CLIENT_ID`,
 `GOOGLE_OAUTH_CLIENT_SECRET`, `CODE_INTERPRETER_EXTENSION_NAME`, and
 `BQML_RAG_CORPUS_NAME` set.
 

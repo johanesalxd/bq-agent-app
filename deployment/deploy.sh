@@ -21,7 +21,7 @@
 #   AGENT_ENGINE_RESOURCE_NAME=projects/.../locations/.../reasoningEngines/...
 #   AGENT_ENGINE_ID=<numeric-id>
 
-set -e
+set -eo pipefail
 
 # Resolve repo root and agent dir relative to this script.
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"

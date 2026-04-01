@@ -7,3 +7,8 @@ mise.toml
 .pytest_cache/
 .ruff_cache/
 .opencode/
+dist/
+*.egg-info/
+*.key
+*.pem
+credentials.json

@@ -16,7 +16,7 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-load_dotenv(dotenv_path=Path(__file__).parent.parent / ".env")
+load_dotenv(dotenv_path=Path(__file__).parent.parent / ".env", override=True)
 
 import vertexai  # noqa: E402
 from vertexai.extensions._extensions import Extension  # noqa: E402

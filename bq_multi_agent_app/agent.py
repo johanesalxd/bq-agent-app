@@ -20,6 +20,7 @@ from google.adk.agents.readonly_context import ReadonlyContext
 from google.adk.tools.preload_memory_tool import PreloadMemoryTool
 from google.adk.tools.load_memory_tool import LoadMemoryTool
 
+from .auth import bridge_oauth_token
 from .constants import MODEL_NAME
 from .prompts import return_instructions_root
 from .sub_agents import bqml_agent, ds_agent
@@ -67,5 +68,6 @@ root_agent = Agent(
         PreloadMemoryTool(),  # Auto-retrieves relevant memories at the start of each turn
         LoadMemoryTool(),  # Model calls this explicitly to search memories mid-conversation
     ],
+    before_tool_callback=bridge_oauth_token,
     after_agent_callback=_generate_memories_callback,
 )

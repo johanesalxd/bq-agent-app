@@ -9,11 +9,14 @@ Note: Listing BigQuery ML models is handled via the bqml_toolset using
 INFORMATION_SCHEMA.MODELS, which ensures per-user OAuth is enforced consistently.
 """
 
+import logging
 import os
 
 from google.adk.tools.bigquery import BigQueryCredentialsConfig, BigQueryToolset
 from google.adk.tools.bigquery.config import BigQueryToolConfig, WriteMode
 from vertexai import rag
+
+logger = logging.getLogger(__name__)
 
 
 def rag_response(query: str) -> str:
@@ -46,6 +49,7 @@ def rag_response(query: str) -> str:
         )
         return str(response)
     except Exception as e:
+        logger.exception("rag_response: error querying corpus '%s'", corpus_name)
         return f"Error querying RAG corpus: {str(e)}"
 
 

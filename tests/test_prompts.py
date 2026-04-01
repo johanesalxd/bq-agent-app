@@ -120,9 +120,12 @@ def test_bqml_instructions_contain_compute_project(bqml_instructions):
     )
 
 
-def test_bqml_instructions_contain_model_type_examples(bqml_instructions):
-    for keyword in ("LOGISTIC REGRESSION", "ARIMA", "CLUSTERING"):
-        assert keyword in bqml_instructions, f"Missing model type example: {keyword}"
+def test_bqml_instructions_reference_rag_for_syntax(bqml_instructions):
+    # SQL model type examples have been removed; the prompt instructs the agent
+    # to always query rag_response for authoritative, up-to-date BQML syntax.
+    assert "rag_response" in bqml_instructions, (
+        "BQML prompt must reference rag_response as the authoritative syntax source"
+    )
 
 
 def test_bqml_instructions_warn_about_long_run_times(bqml_instructions):
