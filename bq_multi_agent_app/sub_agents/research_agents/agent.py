@@ -10,7 +10,7 @@ an agent — it cannot be combined with other tools in the same agent instance.
 from google.adk.agents import Agent
 from google.adk.tools import google_search
 
-from bq_multi_agent_app.constants import MODEL_NAME
+from ...constants import MODEL_NAME
 
 from .prompts import return_instructions_research
 
