@@ -258,7 +258,7 @@ for a in agents:
     local register_payload
     register_payload="$(printf '{
   "displayName": "%s",
-  "description": "BigQuery analytics, data science, BQML, and conversational analytics via BQ Data Agents.",
+  "description": "BigQuery analytics, data science, BQML, conversational analytics via BQ Data Agents, and research on data analytics topics via Google Search.",
   "adk_agent_definition": {
     "provisioned_reasoning_engine": {
       "reasoning_engine": "%s"
