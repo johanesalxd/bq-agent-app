@@ -4,13 +4,14 @@ A multi-agent system for BigQuery analytics and data science, built with the
 [Google Agent Development Kit (ADK)](https://google.github.io/adk-docs/). Users
 interact in natural language; the system handles schema discovery, analytics via
 the Conversational Analytics (CA) API, advanced Python analysis, BigQuery ML
-operations, and access to pre-configured BQ Data Agents.
+operations, access to pre-configured BQ Data Agents, and research on data
+analytics topics via Google Search grounding.
 
 ## Agent Flow
 
 ```mermaid
 flowchart TD
-    User([User Query]) --> Root[Root Agent\nbigquery_ds_agent]
+    User([User Query]) --> Root[Root Agent\nbq_multi_agent]
     Root --> S1[Schema Discovery\nlist_dataset_ids / get_table_info / search_catalog]
     S1 --> S2{Route by Intent}
 
@@ -18,6 +19,7 @@ flowchart TD
     S2 ==> |"PATH C - ADVANCED\nstats, Python, forecast\ncharts, visualization"| DS[DS Sub-Agent\nds_agent]
     S2 -.-> |"PATH A\nnamed BQ Data Agent"| DA[DataAgentToolset\nask_data_agent]
     S2 -.-> |"PATH B\nML model ops"| BQML[BQML Sub-Agent\nbqml_agent]
+    S2 -.-> |"PATH E\nresearch, docs\nplatform comparisons"| RES[Research Sub-Agent\nresearch_aida_agent]
 
     ADI --> R_ADI([Data + Text Analysis\nNo Charts])
 
@@ -32,6 +34,9 @@ flowchart TD
     BQML --> BQ_W[(BigQuery\nwrite-enabled)]
     RAG --> R_BQML([SQL + Model Results\nuser approval required])
     BQ_W --> R_BQML
+
+    RES --> GS[Google Search\ngrounding]
+    GS --> R_RES([Research Results\nwith citations])
 ```
 
 Thick arrows (`==>`) indicate the two primary paths used for most requests.
@@ -88,6 +93,11 @@ User: "Create a churn prediction model"
   -> Delegates to BQML sub-agent
   -> BQML agent: RAG lookup -> generate SQL -> user approval -> execute
 
+User: "How does BigQuery compare to Snowflake for semi-structured data?"
+  -> Root agent: research question, no data access needed
+  -> Delegates to Research AIDA sub-agent
+  -> Research agent: Google Search -> synthesize findings -> cited answer
+
 User: "Ask order_user_agent about top customers"
   -> Root agent: pre-configured BQ Data Agent reference
   -> Calls DataAgentToolset -> ask_data_agent
@@ -100,8 +110,9 @@ User: "Ask order_user_agent about top customers"
 |----------|------|-------------------------------|---------|
 | 1 | **Data Agent** | User explicitly references a named BQ Data Agent | `DataAgentToolset` |
 | 2 | **BQML** | ML model creation, training, evaluation, predictions | BQML sub-agent |
-| 3 | **Advanced** | Statistical testing, custom Python, forecasting, anomaly detection, charts | DS sub-agent |
-| 4 | **Default** | Everything else — counts, aggregations, trends, comparisons (no charts) | `ask_data_insights` (CA API) |
+| 3 | **Research** | BigQuery features, platform comparisons, docs, AI/ML concepts | Research AIDA sub-agent |
+| 4 | **Advanced** | Statistical testing, custom Python, forecasting, anomaly detection, charts | DS sub-agent |
+| 5 | **Default** | Everything else — counts, aggregations, trends, comparisons (no charts) | `ask_data_insights` (CA API) |
 
 The **Default path** handles the vast majority of queries. `ask_data_insights` is
 the same backend that powers BQ Agents and Looker Conversational Analytics — it
@@ -113,7 +124,7 @@ Chart and visualization requests are routed to the DS sub-agent (Advanced path).
 ## Architecture
 
 ```
-Root Agent  bigquery_ds_agent
+Root Agent  bq_multi_agent
 │
 ├── BigQueryToolset  [ca_toolset — read-only, per-user OAuth]
 │   ask_data_insights  list_dataset_ids  get_dataset_info
@@ -137,11 +148,14 @@ Root Agent  bigquery_ds_agent
     │   │   seaborn 0.13.2  scikit-learn 1.4.0  statsmodels 0.14.1  Pillow 10.2.0
     │   └── load_artifacts
     │
-    └── BQML Sub-Agent  bqml_agent
-        ├── BigQueryToolset  [bqml_toolset — write-enabled, per-user OAuth]
-        │   execute_sql  list_dataset_ids  get_dataset_info
-        │   list_table_ids  get_table_info
-        └── rag_response  [BQML documentation corpus]
+    ├── BQML Sub-Agent  bqml_agent
+    │   ├── BigQueryToolset  [bqml_toolset — write-enabled, per-user OAuth]
+    │   │   execute_sql  list_dataset_ids  get_dataset_info
+    │   │   list_table_ids  get_table_info
+    │   └── rag_response  [BQML documentation corpus]
+    │
+    └── Research AIDA Sub-Agent  research_aida_agent
+        └── google_search  [Google Search grounding — scoped to data/AI topics]
 ```
 
 ### Technology stack
@@ -610,6 +624,48 @@ same GCP project and the user has IAM access.
 
 ---
 
+### Research Path — Research AIDA Sub-Agent
+
+Triggered when the user asks about BigQuery features, platform comparisons,
+data analytics concepts, AI/ML topics, or best practices — questions that
+require current documentation rather than data access.
+
+**Platform comparisons**
+
+```
+"How does BigQuery compare to Snowflake for handling semi-structured JSON data?"
+"What are the key differences between Databricks and BigQuery for ML workloads?"
+"Which is better for streaming ingestion: BigQuery or Redshift?"
+```
+
+**Feature and syntax lookups**
+
+```
+"What are the BigQuery quotas for on-demand queries?"
+"How does BigQuery handle partition pruning for nested repeated fields?"
+"What is the difference between APPROX_COUNT_DISTINCT and COUNT(DISTINCT) in BigQuery?"
+```
+
+**Best practices and architecture**
+
+```
+"What are best practices for BigQuery slot reservation vs on-demand pricing?"
+"How should I design a BigQuery schema for high-cardinality time-series data?"
+"What are Google's recommendations for Dataflow vs BigQuery for ETL pipelines?"
+```
+
+**AI/ML concepts**
+
+```
+"What is the difference between BQML logistic regression and AutoML Tables?"
+"How does Vertex AI Feature Store integrate with BigQuery?"
+"What are the tradeoffs between fine-tuning Gemini vs using it with RAG?"
+```
+
+Responses include a summary, supporting details, and cited source URLs.
+
+---
+
 ### Memory Bank
 
 When running with Memory Bank (requires Agent Engine deployment), the agent
@@ -669,8 +725,12 @@ bq-agent-app/
 │       │   ├── agent.py               # BQML sub-agent
 │       │   ├── prompts.py
 │       │   └── tools.py               # bqml_toolset (execute_sql + discovery, write-enabled)
-│       └── ds_agents/
-│           ├── agent.py               # DS sub-agent: ds_toolset + Code Interpreter
+│       ├── ds_agents/
+│       │   ├── agent.py               # DS sub-agent: ds_toolset + Code Interpreter
+│       │   └── prompts.py
+│       └── research_agents/
+│           ├── __init__.py
+│           ├── agent.py               # Research AIDA sub-agent: google_search
 │           └── prompts.py
 ├── deployment/
 │   ├── deploy.sh                      # Agent Engine deployment via ADK CLI

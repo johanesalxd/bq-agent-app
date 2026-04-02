@@ -74,7 +74,7 @@ def return_instructions_bqml() -> str:
 
     ## Data Presentation
 
-    - Show only the first 3 records; state total count
+    - Show 3-5 sample records; state total count
     - Clean markdown — never raw JSON
     - Offer to show more records or perform additional analysis
 

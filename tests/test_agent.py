@@ -22,7 +22,7 @@ def root_agent():
 
 
 def test_root_agent_name(root_agent):
-    assert root_agent.name == "bigquery_ds_agent"
+    assert root_agent.name == "bq_multi_agent"
 
 
 def test_root_agent_has_description(root_agent):
@@ -48,8 +48,13 @@ def test_root_agent_has_bqml_sub_agent(root_agent):
     assert "bqml_agent" in sub_agent_names
 
 
-def test_root_agent_has_exactly_two_sub_agents(root_agent):
-    assert len(root_agent.sub_agents) == 2
+def test_root_agent_has_research_sub_agent(root_agent):
+    sub_agent_names = [a.name for a in root_agent.sub_agents]
+    assert "research_aida_agent" in sub_agent_names
+
+
+def test_root_agent_has_exactly_three_sub_agents(root_agent):
+    assert len(root_agent.sub_agents) == 3
 
 
 def test_root_agent_has_ca_toolset(root_agent):
@@ -199,6 +204,56 @@ def test_ds_agent_has_load_artifacts(ds_agent):
 def test_ds_agent_has_instruction(ds_agent):
     assert ds_agent.instruction
     assert len(ds_agent.instruction) > 0
+
+
+# ---------------------------------------------------------------------------
+# Research AIDA agent
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture(scope="module")
+def research_aida_agent():
+    from bq_multi_agent_app.sub_agents.research_agents.agent import (
+        research_aida_agent as _research_aida_agent,
+    )
+
+    return _research_aida_agent
+
+
+def test_research_aida_agent_name(research_aida_agent):
+    assert research_aida_agent.name == "research_aida_agent"
+
+
+def test_research_aida_agent_has_description(research_aida_agent):
+    assert research_aida_agent.description
+    assert len(research_aida_agent.description) > 0
+
+
+def test_research_aida_agent_description_mentions_bigquery(research_aida_agent):
+    assert "BigQuery" in research_aida_agent.description
+
+
+def test_research_aida_agent_model_is_set(research_aida_agent):
+    assert research_aida_agent.model
+
+
+def test_research_aida_agent_has_no_sub_agents(research_aida_agent):
+    assert len(research_aida_agent.sub_agents) == 0
+
+
+def test_research_aida_agent_has_google_search_tool(research_aida_agent):
+    tool_names = _tool_names(research_aida_agent)
+    assert any("google_search" in n or "search" in n.lower() for n in tool_names)
+
+
+def test_research_aida_agent_has_only_one_tool(research_aida_agent):
+    # google_search must be used alone — ADK constraint.
+    assert len(research_aida_agent.tools) == 1
+
+
+def test_research_aida_agent_has_instruction(research_aida_agent):
+    assert research_aida_agent.instruction
+    assert len(research_aida_agent.instruction) > 0
 
 
 # ---------------------------------------------------------------------------

@@ -79,8 +79,8 @@ def return_instructions_ds() -> str:
     - **NEVER** install packages
     - **ALWAYS** embed SQL result rows as Python literals before analysing
     - **ALWAYS** sort time series data chronologically before plotting
-    - Use `execute_sql` for BigQuery dedicated tools: `forecast`, `analyze_contribution`,
-      `detect_anomalies` are separate tools — use them directly, not via `execute_sql`
+    - `forecast`, `analyze_contribution`, and `detect_anomalies` are dedicated tools —
+      call them directly, not via `execute_sql`. Use `execute_sql` only for standard SQL queries.
 
     ## Response Format
 

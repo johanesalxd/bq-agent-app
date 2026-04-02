@@ -30,7 +30,13 @@ def test_root_instructions_returns_string(root_instructions):
 
 
 def test_root_instructions_contain_all_routing_paths(root_instructions):
-    for path in ("DEFAULT PATH", "ADVANCED PATH", "BQML PATH", "DATA AGENT PATH"):
+    for path in (
+        "DEFAULT PATH",
+        "ADVANCED PATH",
+        "BQML PATH",
+        "DATA AGENT PATH",
+        "RESEARCH PATH",
+    ):
         assert path in root_instructions, f"Missing '{path}' in root instructions"
 
 
@@ -190,3 +196,51 @@ def test_ds_instructions_do_not_reference_parent_agent_data(ds_instructions):
     # Old prompt referenced receiving data from "parent agent"; new prompt does
     # not since DS agent queries BQ directly.
     assert "parent agent" not in ds_instructions.lower()
+
+
+# ---------------------------------------------------------------------------
+# Research AIDA agent prompt
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture(scope="module")
+def research_instructions():
+    from bq_multi_agent_app.sub_agents.research_agents.prompts import (
+        return_instructions_research,
+    )
+
+    return return_instructions_research()
+
+
+def test_research_instructions_returns_string(research_instructions):
+    assert isinstance(research_instructions, str)
+    assert len(research_instructions) > 0
+
+
+def test_research_instructions_mention_google_search(research_instructions):
+    assert "google_search" in research_instructions
+
+
+def test_research_instructions_mention_bigquery(research_instructions):
+    assert "BigQuery" in research_instructions
+
+
+def test_research_instructions_define_scope(research_instructions):
+    lowered = research_instructions.lower()
+    assert "scope" in lowered
+
+
+def test_research_instructions_require_citations(research_instructions):
+    lowered = research_instructions.lower()
+    assert "cite" in lowered or "source" in lowered or "url" in lowered
+
+
+def test_research_instructions_prohibit_off_topic(research_instructions):
+    lowered = research_instructions.lower()
+    assert "never" in lowered or "do not" in lowered or "not answer" in lowered
+
+
+def test_research_instructions_contain_response_format(research_instructions):
+    assert (
+        "Summary" in research_instructions or "Response Format" in research_instructions
+    )

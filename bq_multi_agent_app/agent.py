@@ -22,7 +22,7 @@ from google.adk.tools.load_memory_tool import LoadMemoryTool
 
 from .constants import MODEL_NAME
 from .prompts import return_instructions_root
-from .sub_agents import bqml_agent, ds_agent
+from .sub_agents import bqml_agent, ds_agent, research_aida_agent
 from .tools import ca_toolset, data_agent_toolset
 
 # Number of recent events to process for memory generation per turn.
@@ -60,15 +60,15 @@ def _global_instruction(_ctx: ReadonlyContext) -> str:
 
 root_agent = Agent(
     model=MODEL_NAME,
-    name="bigquery_ds_agent",
+    name="bq_multi_agent",
     description=(
         "Orchestrates BigQuery analytics, data science analysis, BigQuery ML operations, "
-        "and conversational analytics via BQ Data Agents. Routes requests to the "
-        "appropriate tool or sub-agent based on the type of analysis required."
+        "conversational analytics via BQ Data Agents, and research on data analytics "
+        "topics. Routes requests to the appropriate tool or sub-agent based on intent."
     ),
     global_instruction=_global_instruction,
     instruction=return_instructions_root(),
-    sub_agents=[ds_agent, bqml_agent],
+    sub_agents=[ds_agent, bqml_agent, research_aida_agent],
     tools=[
         ca_toolset,  # CA API + discovery tools (ask_data_insights, list/get dataset/table)
         data_agent_toolset,  # Pre-configured BQ Data Agents via Conversational Analytics API

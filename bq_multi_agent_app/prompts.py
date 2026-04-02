@@ -28,6 +28,12 @@ def return_instructions_root() -> str:
     or listing existing models.
     → Delegate to `bqml_agent`
 
+    **PATH E — RESEARCH PATH**: User asks about BigQuery features, capabilities, pricing,
+    or comparisons with other platforms (Snowflake, Databricks, Redshift, Azure Synapse).
+    Also handles data analytics concepts, AI/ML best practices, or documentation lookups.
+    NOT for querying the user's own data — those go to PATH C or D.
+    → Delegate to `research_aida_agent`
+
     **PATH C — ADVANCED PATH**: Request requires statistical testing, hypothesis tests,
     custom Python/pandas transformations, anomaly/forecast/contribution analysis,
     OR any chart or visualization request.
@@ -51,6 +57,9 @@ def return_instructions_root() -> str:
     1. Complete schema discovery
     2. Delegate to `ds_agent` with full context (question + table names + column descriptions)
     3. The DS agent queries BigQuery and runs Python directly — do not pre-fetch data
+
+    **PATH E execution:**
+    1. Delegate to `research_aida_agent` with the user's question as-is
 
     **PATH B execution:**
     1. Delegate immediately to `bqml_agent` with dataset/project context if known
