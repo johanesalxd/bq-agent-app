@@ -121,6 +121,129 @@ Chart and visualization requests are routed to the DS sub-agent (Advanced path).
 
 ---
 
+## Future Improvements
+
+Four areas where this app can be meaningfully extended.
+
+### 1. Agent Evaluation
+
+Integrate the [Gen AI Evaluation Service](https://cloud.google.com/vertex-ai/generative-ai/docs/models/evaluation-overview)
+to measure agent quality objectively and catch regressions in CI.
+
+The evaluation service supports:
+
+- **Adaptive rubrics** — dynamically generated pass/fail tests per prompt (the
+  recommended starting point)
+- **Trajectory evaluation** — verify the agent calls the right tools in the
+  right order against a reference sequence
+- **Static rubrics** — fixed scoring criteria for dimensions like
+  `RESPONSE_QUALITY`, `GROUNDEDNESS`, and `SAFETY`
+
+Workflow:
+
+```python
+from vertexai import Client
+from vertexai import types
+
+client = Client(project=PROJECT_ID, location=LOCATION)
+
+# Generate responses from the deployed agent
+eval_dataset = client.evals.run_inference(model=AGENT_ENDPOINT, src=prompts_df)
+
+# Evaluate with adaptive rubrics
+eval_result = client.evals.evaluate(
+    dataset=eval_dataset,
+    metrics=[types.RubricMetric.GENERAL_QUALITY],
+)
+eval_result.show()
+```
+
+Expected deliverable: `evaluation/` directory with representative prompt
+datasets (default path, DS path, BQML path, research path) and a
+`run_evaluation.py` script suitable for CI integration.
+
+---
+
+### 2. Guardrail Callbacks
+
+ADK exposes [six callback types](https://google.github.io/adk-docs/callbacks/)
+for intercepting and modifying agent behaviour at every stage of the
+request-response cycle. This app currently uses only `after_agent_callback`
+(to generate memory summaries). The remaining five are unused:
+
+| Callback | Where to apply it |
+|---|---|
+| `before_model_callback` | Input guardrails — block or rewrite the prompt before the LLM sees it |
+| `after_model_callback` | Output safety — redact PII or block harmful content in LLM responses |
+| `before_tool_callback` | Tool validation — reject dangerous SQL patterns before `execute_sql` runs |
+| `after_tool_callback` | Result masking — strip sensitive column values from BigQuery results |
+| `before_agent_callback` | Pre-flight checks — enforce session-level policies before the agent starts |
+
+For managed prompt/response screening, [Model Armor](https://cloud.google.com/security/products/model-armor)
+integrates via REST and has a free tier (up to 2 million tokens/month). It
+detects prompt injection, jailbreaking, PII leakage, and malicious URLs across
+any LLM.
+
+Expected deliverable: `bq_multi_agent_app/callbacks.py` with at minimum
+`before_tool_callback` (SQL safety) and `after_model_callback` (PII masking),
+registered on the root agent and DS sub-agent.
+
+---
+
+### 3. A2A Protocol
+
+The [Agent-to-Agent (A2A) protocol](https://google.github.io/adk-docs/a2a/)
+is an open HTTP standard that lets agents advertise capabilities via an
+**agent card** and accept tasks from other agents via an **AgentExecutor**
+interface.
+
+Wrapping `bq_multi_agent` as an A2A server makes it discoverable and callable
+by any A2A-compatible orchestrator — including other ADK agents and third-party
+systems. ADK ships with `A2AServer` and the `AgentExecutor` base class; Agent
+Engine supports A2A deployment in preview.
+
+Expected deliverable: an agent card JSON (`deployment/a2a_agent_card.json`),
+an executor module (`bq_multi_agent_app/a2a_executor.py`) wrapping the ADK
+`Runner`, and a registration script.
+
+---
+
+### 4. MCP Tooling and Agent Skills
+
+**MCP tooling**
+
+ADK supports [`McpToolset`](https://google.github.io/adk-docs/tools-custom/mcp-tools/)
+to connect any agent to a Streamable HTTP MCP server. The Research AIDA
+sub-agent currently uses `google_search` for free-form retrieval; replacing or
+augmenting it with a domain-specific MCP server (e.g., a Cloud Run service
+serving BigQuery and Vertex AI documentation) would give it structured,
+versioned, citation-rich results.
+
+Self-hosting a docs MCP server on Cloud Run is the practical path — no
+publicly hosted Google Cloud docs MCP endpoint is currently available.
+
+**Agent Skills**
+
+[Agent Skills](https://agentskills.io/) is an open standard for packaging
+reusable analytics workflows as `SKILL.md` files. Each skill contains YAML
+metadata and markdown instructions; an agent loads only the metadata at startup
+and pulls the full skill on demand (lean context by default). Skills are
+version-controlled alongside the code and supported by OpenCode, Gemini CLI,
+and other tools.
+
+Candidate skills for this repo:
+
+| Skill | Description |
+|---|---|
+| `cohort-analysis` | Step-by-step cohort retention analysis using `order_items` |
+| `bqml-model-selection` | Decision guide for choosing the right BQML model type |
+| `data-quality-audit` | Null-check, duplicate-check, and distribution summary workflow |
+
+Expected deliverable: `McpToolset` integration in the Research AIDA sub-agent
+and 3–5 packaged skills under `.skills/`.
+
+---
+
 ## Architecture
 
 ```
@@ -875,9 +998,15 @@ to the DS sub-agent's Code Interpreter.
 
 - [Google ADK Documentation](https://google.github.io/adk-docs/)
 - [ADK BigQuery Tools](https://google.github.io/adk-docs/integrations/bigquery/)
+- [ADK Callbacks](https://google.github.io/adk-docs/callbacks/)
+- [ADK MCP Tools](https://google.github.io/adk-docs/tools-custom/mcp-tools/)
+- [ADK A2A Protocol](https://google.github.io/adk-docs/a2a/)
 - [BigQuery Conversational Analytics](https://cloud.google.com/bigquery/docs/conversational-analytics-overview)
 - [Vertex AI Agent Engine](https://cloud.google.com/vertex-ai/generative-ai/docs/agent-engine/overview)
 - [Agent Engine Observability](https://cloud.google.com/agent-builder/agent-engine/manage/tracing)
+- [Gen AI Evaluation Service](https://cloud.google.com/vertex-ai/generative-ai/docs/models/evaluation-overview)
+- [Model Armor](https://cloud.google.com/security/products/model-armor)
+- [Agent Skills](https://agentskills.io/)
 - [Gemini Enterprise](https://cloud.google.com/products/gemini/enterprise)
 - [Vertex AI Memory Bank](https://cloud.google.com/vertex-ai/generative-ai/docs/agent-engine/memory-bank)
 
