@@ -286,7 +286,7 @@ Root Agent  bq_multi_agent
 | Component | Details |
 |-----------|---------|
 | Framework | Google ADK 1.28+ |
-| Model | Gemini 3.1 Pro Preview — customtools variant (`MODEL_NAME` in `constants.py`) |
+| Model | Gemini 3.1 Pro Preview (`MODEL_NAME` in `constants.py`) |
 | CA API | `ask_data_insights` — same backend as BQ Agents and Looker CA |
 | Auth | Per-user OAuth via `external_access_token_key` — token read from session state on every tool call, no refresh attempt |
 | Code execution | `VertexAiCodeExecutor` + pre-provisioned Code Interpreter Extension |
@@ -741,9 +741,34 @@ Data Agents are identified by resource names of the form
 `projects/<PROJECT_ID>/locations/global/dataAgents/<AGENT_ID>`. The root agent
 resolves friendly names automatically via `list_accessible_data_agents`.
 
-No code changes are needed to use your `order_user_agent` and
-`inventory_product_agent` — they are accessible as long as they exist in the
-same GCP project and the user has IAM access.
+No code changes are needed to use your Data Agents — they are accessible as
+long as they exist in the same GCP project and the user has IAM access.
+
+**Example session**
+
+```
+You:   "What data agents do I have access to?"
+Agent: lists order_user_agent and inventory_product_agent
+
+You:   "Ask order_user_agent to calculate the average order value by traffic source"
+Agent: routes to ask_data_agent → order_user_agent queries orders, order_items,
+       and users tables → returns data table and text analysis
+
+You:   "Ask inventory_product_agent which products are running low on stock"
+Agent: routes to ask_data_agent → inventory_product_agent queries inventory_items
+       and products tables → returns stock-level analysis
+```
+
+The key pattern is **"Ask \<agent\_name\> to \<your question\>"**. The root agent
+handles discovery and routing — you just reference the agent by its display name.
+
+**Creating your own CA API Data Agents**
+
+The agents above (`order_user_agent` and `inventory_product_agent`) are created
+via the Conversational Analytics API and backed by `thelook_ecommerce` tables.
+For a companion repo that shows how to create, deploy, and register CA API Data
+Agents as standalone ADK agents on Agent Engine and Gemini Enterprise, see
+[bq_caapi_ge](https://github.com/johanesalxd/random-stuff/tree/main/bq_caapi_ge).
 
 ---
 

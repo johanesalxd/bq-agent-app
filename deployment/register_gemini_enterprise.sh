@@ -3,9 +3,9 @@
 # Register the deployed Agent Engine with Gemini Enterprise (Agentspace).
 #
 # This script is idempotent. On each run it:
-#   - Step 1: Deletes any existing custom ADK agent registrations (those with
-#             a provisionedReasoningEngine). Leaves Google built-in agents
-#             (e.g. deep_research) untouched.
+#   - Step 1: Deletes the existing registration for this app's reasoning engine
+#             only. Leaves Google built-in agents and any other custom ADK agents
+#             registered in the same Gemini Enterprise app untouched.
 #   - Step 2: Creates or replaces the authorization resource with the current
 #             OAuth credentials from .env (delete + recreate, because PATCH
 #             silently ignores credential fields — Discovery Engine API bug).
@@ -127,24 +127,25 @@ main() {
         -H "X-Goog-User-Project: ${project_id}" \
         "${agents_url}")"
 
-    # Filter to custom ADK agents only (those with a provisionedReasoningEngine).
-    # This preserves Google built-in agents (e.g. deep_research) which have no
-    # adkAgentDefinition, while deleting ALL prior custom registrations regardless
-    # of which reasoning engine they point to. This handles the case where the
-    # agent was redeployed and the engine resource name changed.
+    # Filter to the specific agent registration pointing to THIS reasoning engine.
+    # This preserves Google built-in agents (e.g. deep_research) and any other
+    # custom ADK agents registered in the same Gemini Enterprise app (e.g. agents
+    # from a companion repo). Only the registration whose reasoningEngine matches
+    # AGENT_ENGINE_RESOURCE_NAME is deleted and re-created.
     local existing_agents
     existing_agents="$(echo "${list_response}" | python3 -c "
 import json, sys
 data = json.load(sys.stdin)
+target = '${reasoning_engine}'
 agents = data.get('agents', [])
 for a in agents:
     name = a.get('name', '')
-    has_engine = bool(
+    engine = (
         a.get('adkAgentDefinition', {})
          .get('provisionedReasoningEngine', {})
          .get('reasoningEngine', '')
     )
-    if name and has_engine:
+    if name and engine == target:
         print(name)
 " 2>/dev/null || true)"
 
