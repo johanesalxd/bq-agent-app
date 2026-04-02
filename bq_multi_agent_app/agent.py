@@ -55,6 +55,13 @@ def _global_instruction(_ctx: ReadonlyContext) -> str:
       in your request so the system routes to the advanced analysis path from the
       start. Requesting a chart after a text-only analysis requires re-querying the
       data, so it is more efficient to ask for the chart upfront.
+    - For BigQuery ML: ask to create, train, evaluate, or run predictions with a
+      BigQuery ML model and the system handles the full lifecycle.
+    - For research: ask about BigQuery features, platform comparisons
+      (e.g. Snowflake vs BigQuery), best practices, or data analytics concepts
+      and the system uses Google Search to provide cited, up-to-date answers.
+    - For pre-configured BQ Data Agents: reference them by name (e.g. "ask
+      order_user_agent about top customers") and the system routes to them directly.
     """
 
 
